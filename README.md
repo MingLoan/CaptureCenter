@@ -22,7 +22,7 @@ pod "CaptureCenter"
 
 ## Author
 
-mingloan, keith.chan@chaatz.com
+mingloan, mingloanchan@gmail.com
 
 ## License
 
