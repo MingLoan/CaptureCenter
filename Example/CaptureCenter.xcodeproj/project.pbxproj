@@ -15,6 +15,7 @@
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
 		680C32F21530260B5EA988F9 /* Pods_CaptureCenter_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4202C268DADE26A6D9B29A6E /* Pods_CaptureCenter_Tests.framework */; };
+		9A4A73E21F1F60C200873C7F /* CameraPreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4A73E11F1F60C200873C7F /* CameraPreviewViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,7 +32,7 @@
 		15971CC5B5C42221BFA84FC9 /* Pods-CaptureCenter_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CaptureCenter_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-CaptureCenter_Tests/Pods-CaptureCenter_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		38352425BC1EB508055F5AD2 /* Pods-CaptureCenter_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CaptureCenter_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-CaptureCenter_Example/Pods-CaptureCenter_Example.release.xcconfig"; sourceTree = "<group>"; };
 		4202C268DADE26A6D9B29A6E /* Pods_CaptureCenter_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CaptureCenter_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		4927F6DF018BAA0C4E4261C5 /* CaptureCenter.podspec */ = {isa = PBXFileReference; includeInIndex = 1; name = CaptureCenter.podspec; path = ../CaptureCenter.podspec; sourceTree = "<group>"; };
+		4927F6DF018BAA0C4E4261C5 /* CaptureCenter.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = CaptureCenter.podspec; path = ../CaptureCenter.podspec; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* CaptureCenter_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CaptureCenter_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACD51AFB9204008FA782 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -43,9 +44,11 @@
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		6AF3AC236AA823D01EB7632F /* Pods-CaptureCenter_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CaptureCenter_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CaptureCenter_Tests/Pods-CaptureCenter_Tests.debug.xcconfig"; sourceTree = "<group>"; };
-		7A5E44C469E4F1C33CAF39F0 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		7A5E44C469E4F1C33CAF39F0 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		889CD122C9ED1C9F2548C016 /* Pods-CaptureCenter_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CaptureCenter_Example.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CaptureCenter_Example/Pods-CaptureCenter_Example.debug.xcconfig"; sourceTree = "<group>"; };
-		C356A7EA4320B771B385A1F0 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		9A4A73E11F1F60C200873C7F /* CameraPreviewViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraPreviewViewController.swift; sourceTree = "<group>"; };
+		9A4A73E31F1F614F00873C7F /* CameraViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
+		C356A7EA4320B771B385A1F0 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		D96E3C8B48F9510EB947A540 /* Pods_CaptureCenter_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CaptureCenter_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -106,6 +109,8 @@
 			children = (
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
 				607FACD71AFB9204008FA782 /* ViewController.swift */,
+				9A4A73E11F1F60C200873C7F /* CameraPreviewViewController.swift */,
+				9A4A73E31F1F614F00873C7F /* CameraViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
@@ -215,6 +220,7 @@
 				TargetAttributes = {
 					607FACCF1AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
+						DevelopmentTeam = SHCCY36E8X;
 						LastSwiftMigration = 0820;
 					};
 					607FACE41AFB9204008FA782 = {
@@ -362,6 +368,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
+				9A4A73E21F1F60C200873C7F /* CameraPreviewViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -496,12 +503,15 @@
 			baseConfigurationReference = 889CD122C9ED1C9F2548C016 /* Pods-CaptureCenter_Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = SHCCY36E8X;
 				INFOPLIST_FILE = CaptureCenter/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 3.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -510,12 +520,15 @@
 			baseConfigurationReference = 38352425BC1EB508055F5AD2 /* Pods-CaptureCenter_Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = SHCCY36E8X;
 				INFOPLIST_FILE = CaptureCenter/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 3.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};

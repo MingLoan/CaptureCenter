@@ -1,0 +1,6 @@
+framework module CaptureCenter {
+  umbrella header "CaptureCenter-umbrella.h"
+
+  export *
+  module * { export * }
+}
