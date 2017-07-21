@@ -21,7 +21,7 @@ extension UIImage {
      - Parameter ratio:   The ratio of rect to crop.
      - Returns: A new cropped image.
      */
-    func compressToSize(_ targetSize: Size, outputType: ImageType) -> Data? {
+    func compressToSize(_ targetSize: Size, outputType: ImageType) -> UIImage? {
         var actualWidth = size.width
         var actualHeight = size.height
         
@@ -52,61 +52,7 @@ extension UIImage {
         UIGraphicsBeginImageContext(rect.size)
         draw(in: rect)
         
-        guard let img = UIGraphicsGetImageFromCurrentImageContext() else {
-            return nil
-        }
-        
-        var imageData: Data?
-        
-        switch outputType {
-        case .JPEG:
-            imageData = UIImageJPEGRepresentation(img, 0.9)
-            break
-        case .PNG:
-            imageData = UIImagePNGRepresentation(img)
-            break
-        default:
-            break
-        }
-        return imageData
-    }
-    
-    /**
-     Crop Center Square From Image
-     - Parameter ratio:   The ratio of rect to crop.
-     - Returns: A new cropped image.
-     */
-    func centerArea(withRatio ratio: CGFloat) -> UIImage {
-        
-        let refWidth: CGFloat = CGFloat(cgImage!.width)
-        let refHeight: CGFloat = CGFloat(cgImage!.height)
-        
-        if refWidth == 0 || refHeight == 0 {
-            return self
-        }
-        
-        let imageEdgeRatio = refWidth/refHeight
-        
-        var width: CGFloat = 0
-        var height: CGFloat = 0
-        if imageEdgeRatio > ratio {
-            height = refHeight
-            width = height * ratio
-        }
-        else {
-            width = refWidth
-            height = width/ratio
-        }
-        
-        let x = (refWidth - width) / 2
-        let y = (refHeight - height) / 2
-        
-        let cropRect = CGRect(x: x, y: y, width: ceil(width), height: ceil(height))
-        if let imageRef = self.cgImage!.cropping(to: cropRect) {
-            let cropped = UIImage(cgImage: imageRef, scale: 0, orientation: imageOrientation)
-            return cropped
-        }
-        return self
+        return UIGraphicsGetImageFromCurrentImageContext()
     }
     
     func orientationForFlippingHorizontally(source isCGImage: Bool) -> UIImageOrientation {

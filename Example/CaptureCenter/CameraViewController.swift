@@ -76,7 +76,8 @@ private final class CameraPreviewContainerView: UIView {
 
 class CameraViewController: UIViewController {
     
-    fileprivate var isSquared = false
+    var callback: (Any) -> () = { _ in }
+    fileprivate var isSquared = true
     fileprivate var canCaptureVideo = true
     
     // control recording
@@ -364,11 +365,16 @@ class CameraViewController: UIViewController {
             
             UIApplication.shared.beginIgnoringInteractionEvents()
             
-            let options = ImageOptions(imageType: .JPEG, targetWidth: 300, targetHeight: 300)
+            let options = ImageOptions(imageType: .livePhoto, imageSize: .custom(width: 1080, height: 1080), JPEGCompression: 0.9)
+            // let options = ImageOptions(imageType: .livePhoto, imageSize: .normal, JPEGCompression: 0.9)
+            // let options = ImageOptions(imageType: .livePhoto, imageSize: .highResolution, JPEGCompression: 0.9)
             captureCenter.captureWithOptions(options) { [unowned self] data in
+                // return in main thread
+                UIApplication.shared.endIgnoringInteractionEvents()
                 // upload image and send
                 guard let imageData = data, let img = UIImage(data: imageData) else { return }
-                
+                self.callback(img)
+                self.dismiss(animated: true, completion: nil)
             }
             break
         case .video(_, _, _, _, _, _):

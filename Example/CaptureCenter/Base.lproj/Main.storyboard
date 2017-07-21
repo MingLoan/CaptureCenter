@@ -65,6 +65,25 @@
             </objects>
             <point key="canvasLocation" x="1348" y="83"/>
         </scene>
+        <!--Results-->
+        <scene sceneID="im4-Wn-hDi">
+            <objects>
+                <viewController storyboardIdentifier="ResultVC" title="Results" useStoryboardIdentifierAsRestorationIdentifier="YES" id="O42-JK-bxd" customClass="ResultsViewController" customModule="CaptureCenter_Example" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="ftb-ce-Orc"/>
+                        <viewControllerLayoutGuide type="bottom" id="P5j-Gi-BEp"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="PsL-Ld-7wB">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="BAQ-Gn-keY"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="e2c-1x-Q9e" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1175" y="-604"/>
+        </scene>
         <!--Navigation Controller-->
         <scene sceneID="JUc-YP-X5b">
             <objects>

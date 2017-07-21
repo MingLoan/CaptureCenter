@@ -34,21 +34,6 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         self.completionHandler = completionHandler
     }
     
-    fileprivate func didFinish() {
-        
-        if let livePhotoCompanionMoviePath = livePhotoCompanionMovieURL?.path {
-            if FileManager.default.fileExists(atPath: livePhotoCompanionMoviePath) {
-                do {
-                    try FileManager.default.removeItem(atPath: livePhotoCompanionMoviePath)
-                } catch {
-                    print("Could not remove file at url: \(livePhotoCompanionMoviePath)")
-                }
-            }
-        }
-        
-        completionHandler(self, photoData)
-    }
-    
     // Delegates
     
     func capture(_ captureOutput: AVCapturePhotoOutput, willBeginCaptureForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings) {
@@ -60,65 +45,97 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     
     func capture(_ captureOutput: AVCapturePhotoOutput, willCapturePhotoForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings) {
         willCapturePhotoAnimation()
+        print("isFlashEnabled: \(resolvedSettings.isFlashEnabled)")
+        print("isStillImageStabilizationEnabled: \(resolvedSettings.isStillImageStabilizationEnabled)")
+        if #available(iOS 10.2, *) {
+            print("isDualCameraFusionEnabled: \(resolvedSettings.isDualCameraFusionEnabled)")
+        }
+        print("photoDimensions: \(resolvedSettings.photoDimensions.width), \(resolvedSettings.photoDimensions.height)")
+        
     }
     
     func capture(_ captureOutput: AVCapturePhotoOutput, didCapturePhotoForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings) {
+
+    }
+    
+    // Process Photo
+    
+    func capture(_ captureOutput: AVCapturePhotoOutput,
+                 didFinishProcessingPhotoSampleBuffer photoSampleBuffer: CMSampleBuffer?,
+                 previewPhotoSampleBuffer: CMSampleBuffer?,
+                 resolvedSettings: AVCaptureResolvedPhotoSettings,
+                 bracketSettings: AVCaptureBracketedStillImageSettings?,
+                 error: Error?) {
         
+        if let photoSampleBuffer = photoSampleBuffer {
+            photoData = AVCapturePhotoOutput.jpegPhotoDataRepresentation(forJPEGSampleBuffer: photoSampleBuffer, previewPhotoSampleBuffer: previewPhotoSampleBuffer)
+        }
+        else {
+            print("Error capturing photo: \(String(describing: error))")
+        }
     }
     
     func capture(_ captureOutput: AVCapturePhotoOutput, didFinishCaptureForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings, error: Error?) {
         
         if let error = error {
             print("Error capturing photo: \(error)")
-            didFinish()
+            completionHandler(self, nil)
             return
         }
         
         guard let photoData = photoData else {
             print("No photo data resource")
-            didFinish()
+            completionHandler(self, nil)
             return
         }
         
-        // save to album
-        PHPhotoLibrary.requestAuthorization { [unowned self] status in
-            if status == .authorized {
-                PHPhotoLibrary.shared().performChanges({ [unowned self] in
-                    let options = PHAssetResourceCreationOptions()
-                    let creationRequest = PHAssetCreationRequest.forAsset()
-                    //options.uniformTypeIdentifier = self.requestedPhotoSettings.processedFileType.map { $0.rawValue }
-                    creationRequest.addResource(with: .photo, data: photoData, options: options)
-                    
-                    if let livePhotoCompanionMovieURL = self.livePhotoCompanionMovieURL {
-                        let livePhotoCompanionMovieFileResourceOptions = PHAssetResourceCreationOptions()
-                        livePhotoCompanionMovieFileResourceOptions.shouldMoveFile = true
-                        creationRequest.addResource(with: .pairedVideo, fileURL: livePhotoCompanionMovieURL, options: livePhotoCompanionMovieFileResourceOptions)
-                    }
-                    
-                    }, completionHandler: { [unowned self] _, error in
-                        if let error = error {
-                            print("Error occurered while saving photo to photo library: \(error)")
-                        }
-                        
-                        self.didFinish()
-                    }
-                )
-            } else {
-                self.didFinish()
+        
+        if let livePhotoCompanionMoviePath = livePhotoCompanionMovieURL?.path {
+            print("return live photo")
+            // live photo capture
+            if FileManager.default.fileExists(atPath: livePhotoCompanionMoviePath) {
+                do {
+                    try FileManager.default.removeItem(atPath: livePhotoCompanionMoviePath)
+                } catch {
+                    print("Could not remove file at url: \(livePhotoCompanionMoviePath)")
+                }
             }
         }
-    }
-    
-    // Process Photo
-    
-    func capture(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingPhotoSampleBuffer photoSampleBuffer: CMSampleBuffer?, previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Error?) {
-        if let photoSampleBuffer = photoSampleBuffer {
-            photoData = AVCapturePhotoOutput.jpegPhotoDataRepresentation(forJPEGSampleBuffer: photoSampleBuffer, previewPhotoSampleBuffer: previewPhotoSampleBuffer)
-        }
         else {
-            print("Error capturing photo: \(String(describing: error))")
-            return
+            print("return still image")
+            // still image capture
+            completionHandler(self, photoData)
         }
+        
+        
+        // save to album
+        /*
+         PHPhotoLibrary.requestAuthorization { [unowned self] status in
+         if status == .authorized {
+         PHPhotoLibrary.shared().performChanges({ [unowned self] in
+         let options = PHAssetResourceCreationOptions()
+         let creationRequest = PHAssetCreationRequest.forAsset()
+         //options.uniformTypeIdentifier = self.requestedPhotoSettings.processedFileType.map { $0.rawValue }
+         creationRequest.addResource(with: .photo, data: photoData, options: options)
+         
+         if let livePhotoCompanionMovieURL = self.livePhotoCompanionMovieURL {
+         let livePhotoCompanionMovieFileResourceOptions = PHAssetResourceCreationOptions()
+         livePhotoCompanionMovieFileResourceOptions.shouldMoveFile = true
+         creationRequest.addResource(with: .pairedVideo, fileURL: livePhotoCompanionMovieURL, options: livePhotoCompanionMovieFileResourceOptions)
+         }
+         
+         }, completionHandler: { [unowned self] _, error in
+         if let error = error {
+         print("Error occurered while saving photo to photo library: \(error)")
+         }
+         
+         self.didFinish()
+         }
+         )
+         } else {
+         self.didFinish()
+         }
+         }*/
     }
     
     // Live photos delegates
@@ -133,6 +150,8 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
             print("Error processing live photo companion movie: \(String(describing: error))")
             return
         }
+        print("live photo captured")
+        print("\(outputFileURL)")
         livePhotoCompanionMovieURL = outputFileURL
     }
     

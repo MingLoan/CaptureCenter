@@ -63,12 +63,17 @@ public final class CaptureCenter {
     public let previewView = PreviewView()
     public var currentFlashMode = AVCaptureFlashMode.off {
         didSet {
-            setFlashMode(currentFlashMode)
+            if #available(iOS 10.0, *) {
+                // deprecated from iOS10
+            }
+            else {
+                setFlashMode(currentFlashMode)
+            }
         }
     }
     public var currentTorchMode = AVCaptureTorchMode.off {
         didSet {
-            setFlashMode(currentFlashMode)
+            setTorchMode(currentTorchMode)
         }
     }
 
@@ -133,7 +138,7 @@ public final class CaptureCenter {
                 return photoOutput
             }
             let output = AVCapturePhotoOutput()
-            output.isHighResolutionCaptureEnabled = false
+            output.isHighResolutionCaptureEnabled = true
             output.isLivePhotoCaptureEnabled = output.isLivePhotoCaptureSupported
             _photoOutput = output
             return output
@@ -277,15 +282,22 @@ public final class CaptureCenter {
                 
                 let photoSettings = AVCapturePhotoSettings()
                 photoSettings.flashMode = strongSelf.currentFlashMode
-                photoSettings.isAutoStillImageStabilizationEnabled = true
+                if let photoOutput = strongSelf.photoOutput {
+                    photoSettings.isAutoStillImageStabilizationEnabled = photoOutput.isStillImageStabilizationSupported
+                }
+                if case .highResolution = options.imageSize {
+                    photoSettings.isHighResolutionPhotoEnabled = true
+                }
+                else {
+                    photoSettings.isHighResolutionPhotoEnabled = false
+                }
                 
-                photoSettings.isHighResolutionPhotoEnabled = false
                 if photoSettings.availablePreviewPhotoPixelFormatTypes.count > 0 {
                     photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String : photoSettings.availablePreviewPhotoPixelFormatTypes.first!]
                 }
                 
                 // Live Photo capture is not supported in movie mode.
-                if options.imageType == .livePhoto {
+                if let photoOutput = strongSelf.photoOutput, options.imageType == .livePhoto && photoOutput.isLivePhotoCaptureEnabled {
                     let livePhotoMovieFileName = NSUUID().uuidString
                     let livePhotoMovieFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((livePhotoMovieFileName as NSString).appendingPathExtension("mov")!)
                     photoSettings.livePhotoMovieFileURL = URL(fileURLWithPath: livePhotoMovieFilePath)
@@ -307,7 +319,12 @@ public final class CaptureCenter {
                         }, completionHandler: { [weak strongSelf] photoCaptureDelegate, data in
                             guard let innerStrongSelf = strongSelf else { return }
                         
-                            guard let imageData = data else { completion(nil); return }
+                            guard let imageData = data else {
+                                DispatchQueue.main.async {
+                                    completion(nil)
+                                }
+                                return
+                            }
                             innerStrongSelf.processCaptureData(imageData as Data, options: options, completion: completion)
 
                             // When the capture is complete, remove a reference to the photo capture delegate so it can be deallocated.
@@ -350,35 +367,38 @@ public final class CaptureCenter {
         }
     }
     
-    fileprivate func processCaptureData(_ data: Data, options: ImageOptions, completion: ((Data?) -> ())) {
+    fileprivate func processCaptureData(_ data: Data, options: ImageOptions, completion: @escaping ((Data?) -> ())) {
         
         var finalData: Data?
-        let targetSize = Size(width: options.targetWidth, height: options.targetHeight)
+        defer {
+            DispatchQueue.main.async {
+                completion(finalData)
+            }
+        }
         
+        // crop image with preview size
+        guard let image = UIImage(data: data), let cgImage = image.cgImage else { return }
+        var finalRect = AVMakeRect(aspectRatio: previewView.bounds.size, insideRect: CGRect(origin: CGPoint.zero, size: image.size))
+        // check whether image rotated after converting to CGImage
+        if Int(image.size.width) == cgImage.height {
+            finalRect = CGRect(x: finalRect.minY, y: finalRect.minX, width: finalRect.height, height: finalRect.width)
+        }
+        guard let imageRef = cgImage.cropping(to: finalRect) else { return }
+        let croppedImage = UIImage(cgImage: imageRef, scale: image.scale, orientation: image.imageOrientation)
+        var flippedImage = croppedImage
         // flip image for selfie
         if captureDevicePosition == .front {
-            guard
-                let image = UIImage(data: data),
-                let cgImage = image.cgImage
-                else { completion(nil); return }
-            
-            let flippedImage = UIImage(cgImage: cgImage, scale: image.scale, orientation: image.orientationForFlippingHorizontally(source: true))
-            finalData = flippedImage.compressToSize(targetSize, outputType: options.imageType)
+            flippedImage = UIImage(cgImage: imageRef, scale: image.scale, orientation: image.orientationForFlippingHorizontally(source: true))
+        }
+
+        if case let .custom(width, height) = options.imageSize {
+            let targetSize = Size(width: width, height: height)
+            guard let finalImage = flippedImage.compressToSize(targetSize, outputType: options.imageType) else { return }
+            finalData = UIImageJPEGRepresentation(finalImage, options.JPEGCompression)
         }
         else {
-            guard let image = UIImage(data: data) else { completion(nil); return }
-            finalData = image.compressToSize(targetSize, outputType: options.imageType)
+            finalData = UIImageJPEGRepresentation(flippedImage, options.JPEGCompression)
         }
-        
-        guard
-            let fData = finalData,
-            let image = UIImage(data: fData) else { completion(nil); return }
-        // crop image if according to preview size
-        let finalRect = AVMakeRect(aspectRatio: previewView.bounds.size, insideRect: CGRect(origin: CGPoint.zero, size: image.size))
-        let finalImage = image.centerArea(withRatio: finalRect.width/finalRect.height)
-        
-        finalData = UIImageJPEGRepresentation(finalImage, 1)
-        completion(finalData)
     }
     
     public func toggleRecording() {
@@ -608,6 +628,7 @@ public final class CaptureCenter {
     }
     
     private func configureSessionForPhotoMode(_ session: AVCaptureSession) -> Bool {
+        session.sessionPreset = AVCaptureSessionPresetPhoto
         if #available(iOS 10.0, *) {
             // Add photo output.
             if session.canAddOutput(photoOutput) {
@@ -632,6 +653,7 @@ public final class CaptureCenter {
     }
     
     private func configureSessionForVideoMode(_ session: AVCaptureSession, videoSize: VideoSize) -> Bool {
+        session.sessionPreset = AVCaptureSessionPreset1920x1080
         // Add audio input.
         do {
             let audioDevice = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeAudio)

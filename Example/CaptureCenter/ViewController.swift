@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import Photos
+
 
 class ViewController: UIViewController {
     
@@ -55,6 +57,21 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
         }
         else {
             let vc = CameraViewController(nibName: nil, bundle: nil)
+            vc.callback = { [weak self] data in
+                guard let strongSelf = self else { return }
+                if let image = data as? UIImage {
+                    let resultVC = ResultsViewController(resultType: .stillImage(image: image))
+                    strongSelf.navigationController?.pushViewController(resultVC, animated: true)
+                }
+                else if let livePhoto = data as? PHLivePhoto {
+                    let resultVC = ResultsViewController(resultType: .livePhoto(livePhoto: livePhoto))
+                    strongSelf.navigationController?.pushViewController(resultVC, animated: true)
+                }
+                else {
+                    
+                }
+                
+            }
             present(vc, animated: true, completion: nil)
         }
     }
