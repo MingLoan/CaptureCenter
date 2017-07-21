@@ -16,7 +16,12 @@
     "tag": "0.1.0"
   },
   "platforms": {
-    "ios": "8.0"
+    "ios": "9.0"
   },
-  "source_files": "CaptureCenter/Classes/**/*"
+  "source_files": "CaptureCenter/Classes/**/*",
+  "frameworks": [
+    "UIKit",
+    "AVFoundation",
+    "Photos"
+  ]
 }

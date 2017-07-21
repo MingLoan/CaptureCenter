@@ -1,6 +1,8 @@
 use_frameworks!
 
 target 'CaptureCenter_Example' do
+    
+  pod 'Cartography'
   pod 'CaptureCenter', :path => '../'
 
   target 'CaptureCenter_Tests' do

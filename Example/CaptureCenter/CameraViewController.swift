@@ -7,6 +7,8 @@
 
 import Foundation
 import UIKit
+import Cartography
+import AVFoundation
 import CaptureCenter
 
 private final class CameraPreviewContainerView: UIView {
@@ -52,9 +54,6 @@ private final class CameraPreviewContainerView: UIView {
             completion?()
         }
     }
-}
-
-extension CameraPreviewContainerView: CapturePreview {
     
     func attachPreviewView(_ previewView: UIView) {
         previewView.frame = bounds
@@ -63,7 +62,7 @@ extension CameraPreviewContainerView: CapturePreview {
         addSubview(previewView)
         UIView.animate(withDuration: 0.2, animations: {
             self.previewView?.alpha = 1
-        }) 
+        })
     }
     
     func detachPreviewView() {
@@ -71,9 +70,8 @@ extension CameraPreviewContainerView: CapturePreview {
             self.previewView?.alpha = 0
         }, completion: { (finished) in
             self.previewView?.removeFromSuperview()
-        }) 
+        })
     }
-    
 }
 
 class CameraViewController: UIViewController {
@@ -82,6 +80,7 @@ class CameraViewController: UIViewController {
     fileprivate var canCaptureVideo = true
     
     // control recording
+    /*
     fileprivate var capturingVideo = false {
         didSet {
             if capturingVideo {
@@ -105,29 +104,7 @@ class CameraViewController: UIViewController {
             }) 
         }
     }
-    fileprivate var capturingGIF = false {
-        didSet {
-            if capturingGIF {
-                UIApplication.shared.isIdleTimerDisabled = true
-                captureButton.captureButtonState = .videoStop
-            }
-            else {
-                UIApplication.shared.isIdleTimerDisabled = false
-                captureButton.captureButtonState = .videoPlay
-            }
-            
-            captureCenter?.toggleRecording()
-            
-            UIView.animate(withDuration: 0.2, animations: {
-                if self.capturingVideo {
-                    self.photoVideoToggleButton.alpha = 0
-                }
-                else {
-                    self.photoVideoToggleButton.alpha = 1
-                }
-            }) 
-        }
-    }
+     */
     
     // Camera
     fileprivate(set) var captureCenter: CaptureCenter?
@@ -149,19 +126,12 @@ class CameraViewController: UIViewController {
         return button
     }()
     
-    fileprivate let gifSwitchButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.tintColor = UIColor.white
-        button.setImage(UIImage(named:"battleship_icon"), for: UIControlState())
-        return button
-    }()
-    
     fileprivate let flashButton: UIButton = {
         let button = UIButton(type: .custom)
         return button
     }()
 
-    fileprivate let captureProgressRingView = CaptureProgressRingView(frame: CGRect(x: 0, y: 0, width: 74, height: 74))
+    //fileprivate let captureProgressRingView = CaptureProgressRingView(frame: CGRect(x: 0, y: 0, width: 74, height: 74))
     
     fileprivate let bottomView: UIView = {
         let view = UIView()
@@ -185,7 +155,7 @@ class CameraViewController: UIViewController {
         button.tintColor = UIColor.white
         return button
     }()
-    
+    /*
     fileprivate let photoVideoToggleButton: UIButton = {
         let button = UIButton(type: .custom)
         button.setTitle("", for: UIControlState())
@@ -193,17 +163,17 @@ class CameraViewController: UIViewController {
         button.setImage(UIImage(named: "chess_icon"), for: UIControlState())
         return button
     }()
-
+    
     fileprivate let timerView: VideoCaptureTimerView = {
         let view = VideoCaptureTimerView(frame: CGRect(x: 0, y: 0, width: 100, height: 40))
         view.isHidden = true
         return view
     }()
-    
+    */
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationController?.navigationBar.isTranslucent = false
-        view.backgroundColor = UIColor.normalBlackColor()
+        view.backgroundColor = UIColor.black
         
         view.addSubview(previewContainerView)
         
@@ -233,7 +203,7 @@ class CameraViewController: UIViewController {
         // Capture button
         captureButton.addTarget(self, action: #selector(capture(_:)), for: .touchUpInside)
         
-        bottomView.addSubview(captureProgressRingView)
+        //bottomView.addSubview(captureProgressRingView)
         
         // Camera button
         cameraSwitchButton.addTarget(self, action: #selector(cameraDeviceToggle(_:)), for: .touchUpInside)
@@ -247,20 +217,15 @@ class CameraViewController: UIViewController {
             targetView.height == 40
         }
         
-        // GIF button
-        /*
-        gifSwitchButton.addTarget(self, action: #selector(gifToggle(_:)), for: .touchUpInside)
-        bottomView.addSubview(gifSwitchButton)
-        constrain(gifSwitchButton){ (targetView) in
-            if let superview = targetView.superview {
-                targetView.bottom == superview.bottom - 10
-                targetView.right == superview.right - 70
-            }
-            targetView.width == 40
-            targetView.height == 40
-        }
-        */
         bottomView.addSubview(captureButton)
+        constrain(captureButton) { (captureButton) in
+            if let superview = captureButton.superview {
+                captureButton.center == superview.center
+            }
+            captureButton.width == 60
+            captureButton.height == 60
+        }
+        /*
         constrain(captureButton, captureProgressRingView) { (captureButton, captureProgressRingView) in
             if let superview = captureButton.superview {
                 captureButton.center == superview.center
@@ -272,8 +237,8 @@ class CameraViewController: UIViewController {
             captureButton.width == 60
             captureButton.height == 60
         }
-        
-        
+        */
+        /*
         if let source = mediaSource {
             switch source.sourceType {
             case .camera:
@@ -292,6 +257,7 @@ class CameraViewController: UIViewController {
                 break
             }
         }
+        */
         
         // Close button
         closeButton.addTarget(self, action: #selector(close(_:)), for: .touchUpInside)
@@ -324,7 +290,8 @@ class CameraViewController: UIViewController {
         redrawFlashButton()
         */
         // Timer Label
-        view.addSubview(timerView)
+        //view.addSubview(timerView)
+        /*
         constrain(timerView) { (targetView) in
             if let superview = targetView.superview {
                 targetView.centerX == superview.centerX
@@ -333,7 +300,7 @@ class CameraViewController: UIViewController {
             targetView.height == 30
             targetView.width == 120
         }
-        
+        */
     }
     
     override func viewDidLayoutSubviews() {
@@ -357,7 +324,7 @@ class CameraViewController: UIViewController {
     func startCapturing() {
         
         if captureCenter == nil {
-            captureCenter = CaptureCenter()
+            captureCenter = CaptureCenter(captureMode: .photo)
         }
         
         captureSessionDidStartRunningNotification =
@@ -367,7 +334,7 @@ class CameraViewController: UIViewController {
                 queue: OperationQueue.main) { [weak self] (_) in
                     self?.redrawFlashButton()
         }
-        _ = captureCenter?.startCapturing(.back, from: self, cameraControlShouldOn: true)
+        _ = captureCenter?.startCapturingWithDevicePosition(.back, fromVC: self, cameraControlShouldOn: true, completion: nil)
         
         if let previewView = captureCenter?.previewView {
             previewContainerView.attachPreviewView(previewView)
@@ -376,20 +343,15 @@ class CameraViewController: UIViewController {
     
     func stopCapturing() {
         guard let captureCenter = captureCenter else { return }
-        NotificationCenter.default.removeOptionalObserver(captureSessionDidStartRunningNotification)
+        if let captureSessionDidStartRunningNotification = captureSessionDidStartRunningNotification {
+            NotificationCenter.default.removeObserver(captureSessionDidStartRunningNotification)
+        }
         captureCenter.stopCapturing()
         previewContainerView.detachPreviewView()
     }
     
     func close(_ sender: UIButton) {
-        if capturingVideo {
-            capturingVideo = false
-        }
-        if capturingGIF {
-            capturingGIF = false
-        }
         stopCapturing()
-        showStatusBar()
         dismiss(animated: true, completion: nil)
     }
     
@@ -398,34 +360,27 @@ class CameraViewController: UIViewController {
         guard let captureCenter = captureCenter else { return }
 
         switch captureCenter.captureMode {
-        case .stillImage:
+        case .photo:
             
             UIApplication.shared.beginIgnoringInteractionEvents()
             
-            captureCenter.capture(.fullScreen) { [unowned self] data in
+            let options = ImageOptions(imageType: .JPEG, targetWidth: 300, targetHeight: 300)
+            captureCenter.captureWithOptions(options) { [unowned self] data in
                 // upload image and send
                 guard let imageData = data, let img = UIImage(data: imageData) else { return }
                 
-                DispatchQueue.main.async {
-                    UIApplication.shared.endIgnoringInteractionEvents()
-                    let editViewController = MediaEditViewController(nibName: nil, bundle: nil)
-                    editViewController.mediaSource = self.mediaSource
-                    editViewController.medias = [Media.image(image: img)]
-                    self.navigationController?.pushViewController(editViewController, animated: true)
-                }
             }
-
             break
-        case .video(_, _, _):
-            capturingVideo = !capturingVideo
+        case .video(_, _, _, _, _, _):
+            //capturingVideo = !capturingVideo
             break
-        case .gif(_, _, _):
-            capturingGIF = !capturingGIF
+        case .stream:
             break
         }
     }
     
     // MARK: - Toggle Photo Capture and Video Taking
+    /*
     func photoVideoToggle(_ sender: UIButton) {
         
         guard let captureCenter = captureCenter else { return }
@@ -435,11 +390,7 @@ class CameraViewController: UIViewController {
         switch captureCenter.captureMode {
         case .stillImage:
             
-            captureCenter.toggle(
-                captureMode:
-                    .video(size: .fileSize(bytes: 5 * 1024 * 1024),
-                        location: tempURLForVideo(),
-                        delegateObject: self))
+            captureCenter.toggleCaptureMode(.video(size: .fileSize(bytes: 5 * 1024 * 1024), location: tempURLForVideo(), delegateObject: self))
             { [unowned self] finished in
                 self.captureButton.isEnabled = true
             }
@@ -448,8 +399,8 @@ class CameraViewController: UIViewController {
             captureButton.captureButtonState = .videoPlay
             
             break
-        case .video(_, _, _), .gif(_):
-            captureCenter.toggle(captureMode: .stillImage) { [unowned self] finished in
+        case .video(_, _, _):
+            captureCenter.toggleCaptureMode(.stillImage) { [unowned self] finished in
                 self.captureButton.isEnabled = true
             }
             timerView.isHidden = true
@@ -457,41 +408,14 @@ class CameraViewController: UIViewController {
             photoVideoToggleButton.setImage(UIImage(named: "chess_icon"), for: UIControlState())
             break
         }
-    }
-    
-    // MARK: - Toggle to GIF mode
-    func gifToggle(_ sender: UIButton) {
-        guard let captureCenter = captureCenter else { return }
-        
-        captureButton.isEnabled = false
-        
-        switch captureCenter.captureMode {
-        case .stillImage, .video(_, _, _):
-            
-            captureCenter.toggle(
-                captureMode:
-                    .gif(size: .duration(timeInterval: 5),
-                        location: tempURLForVideo(),
-                        delegateObject: self))
-            { [unowned self] finished in
-                self.captureButton.isEnabled = true
-            }
-            timerView.reset()
-            timerView.isHidden = true
-            captureButton.captureButtonState = .videoPlay
-            
-            break
-        default:
-            break
-        }
-    }
+    }*/
     
     // MARK: - Toggle front or back camera
     func cameraDeviceToggle(_ sender: UIButton) {
         
         guard let captureCenter = captureCenter else { return }
         
-        captureCenter.changeCamera(start: { [weak self] in
+        captureCenter.changeCameraWithStartBlock({ [weak self] in
             self?.cameraSwitchButton.isEnabled = false
             self?.captureButton.isEnabled = false
             self?.flashButton.isEnabled = false
@@ -528,7 +452,7 @@ class CameraViewController: UIViewController {
         guard let captureCenter = captureCenter else { return }
         
         switch captureCenter.captureMode {
-        case .stillImage:
+        case .photo:
             
             guard captureCenter.hasFlash else {
                 flashButton.isHidden = true
@@ -557,7 +481,7 @@ class CameraViewController: UIViewController {
             }
             
             break
-        case .video(_), .gif(_):
+        case .video(_):
             
             guard captureCenter.hasTorch else {
                 flashButton.isHidden = true
@@ -585,6 +509,8 @@ class CameraViewController: UIViewController {
                 break
             }
             break
+        case .stream:
+            break
         }
         
         
@@ -595,7 +521,7 @@ class CameraViewController: UIViewController {
         guard let captureCenter = captureCenter else { return }
         
         switch captureCenter.captureMode {
-        case .stillImage:
+        case .photo:
             
             switch captureCenter.currentFlashMode {
             case .auto:
@@ -627,12 +553,14 @@ class CameraViewController: UIViewController {
             
             redrawFlashButton()
             break
-        default:
+        case .stream:
             break
         }
     }
     // MARK: - Video Recording
+    /*
     fileprivate func tempURLForVideo() -> URL {
+     
         let path = filePath(with: .mp4, sid: "temp", fileName: "temp")
         if let path = path {
             removeFile(at: path)
@@ -640,8 +568,9 @@ class CameraViewController: UIViewController {
         let url = URL(fileURLWithPath: path!)
         return url
     }
+    */
 }
-
+/*
 extension CameraViewController: AVCaptureFileOutputRecordingDelegate {
     func capture(_ captureOutput: AVCaptureFileOutput!, didStartRecordingToOutputFileAt fileURL: URL!, fromConnections connections: [Any]!) {
 
@@ -660,7 +589,6 @@ extension CameraViewController: AVCaptureFileOutputRecordingDelegate {
     }
 
     func capture(_ captureOutput: AVCaptureFileOutput!, didFinishRecordingToOutputFileAt outputFileURL: URL!, fromConnections connections: [Any]!, error: Error!) {
-        pretty_function()
         
         DispatchQueue.main.async {
             
@@ -677,7 +605,7 @@ extension CameraViewController: AVCaptureFileOutputRecordingDelegate {
         
         
         if let err = error {
-            debug_print("\(err)")
+            print("\(err)")
             if let finished = (error! as NSError).userInfo["AVErrorRecordingSuccessfullyFinishedKey"] as? Bool {
                 if !finished {
                     return
@@ -686,46 +614,6 @@ extension CameraViewController: AVCaptureFileOutputRecordingDelegate {
         }
         
         let asset = AVAsset(url: outputFileURL)
-        DispatchQueue.main.async {
-            
-            UIApplication.shared.beginIgnoringInteractionEvents()
-            
-            if self.capturingVideo {
-                let editViewController = MediaEditViewController(nibName: nil, bundle: nil)
-                editViewController.mediaSource = self.mediaSource
-                editViewController.medias = [Media.videoAsset(asset: asset)]
-                self.navigationController?.pushViewController(editViewController, animated: true)
-                UIApplication.shared.endIgnoringInteractionEvents()
-            }
-            else {
-                /*
-                let frameCount = Int(CMTimeGetSeconds(asset.duration) * 10)
-                
-                Regift.createGIFFromSource(
-                    outputFileURL,
-                    frameCount: frameCount,
-                    delayTime: 0,
-                    loopCount: 1) { resultURL in
-                        guard let url = resultURL else { return }
-                        guard let data = NSData(contentsOfURL: url) else { return }
-
-                        //let thumbnailImage = UIImageWithAnimatedGIFData(data)
-                        
-                        debug_print("\(url)")
-                        guard NSThread.isMainThread() else { return }
-                        
-                        let media = Media.gif(data: data, thumbnail: nil)
-                        
-                        let previewViewController = GIFPreviewViewController(nibName: nil, bundle: nil)
-                        previewViewController.gif = media
-                        previewViewController.mediaSource = self.mediaSource
-                        self.navigationController?.pushViewController(previewViewController, animated: true)
-                        UIApplication.sharedApplication().endIgnoringInteractionEvents()
-                        UIApplication.sharedApplication().endIgnoringInteractionEvents()
-                    }
-                 */
-            }
-        }
     }
 }
-
+*/

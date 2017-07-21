@@ -20,7 +20,7 @@ import Foundation
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = UIColor.clear
-        icon = ipMaskedImageNamed("941-brightness-toolbar-selected", color: UIColor.yellow)
+        icon = ipMaskedImageNamed("ic_brightness", color: UIColor.yellow)
     }
     
     required public init?(coder aDecoder: NSCoder) {
@@ -28,20 +28,25 @@ import Foundation
     }
     
     func ipMaskedImageNamed(_ name: String, color: UIColor) -> (UIImage?) {
-        if let image = UIImage(named: name) {
-            let rect = CGRect.init(x: 0, y: 0, width: image.size.width, height: image.size.height)
-            UIGraphicsBeginImageContextWithOptions(rect.size, false, image.scale)
-            let c = UIGraphicsGetCurrentContext()
-            image.draw(in: rect)
-            c!.setFillColor(color.cgColor)
-            c!.setBlendMode(.sourceAtop)
-            c!.fill(rect)
-            let result = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext()
-            return result
+        let podBundle = Bundle(for: CameraExposureView.self)
+        guard
+            let bundleURL = podBundle.url(forResource: "CaptureCenter", withExtension: "bundle"),
+            let bundle = Bundle(url: bundleURL),
+            let image = UIImage(named: name, in: bundle, compatibleWith: nil) else {
+                return nil
         }
-        return nil
-    }    
+        
+        let rect = CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height)
+        UIGraphicsBeginImageContextWithOptions(rect.size, false, image.scale)
+        let c = UIGraphicsGetCurrentContext()
+        image.draw(in: rect)
+        c!.setFillColor(color.cgColor)
+        c!.setBlendMode(.sourceAtop)
+        c!.fill(rect)
+        let result = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return result
+    }
     
     override open func draw(_ rect: CGRect) {
         let lineMargin: CGFloat = 11.0

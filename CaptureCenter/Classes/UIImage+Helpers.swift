@@ -65,6 +65,8 @@ extension UIImage {
         case .PNG:
             imageData = UIImagePNGRepresentation(img)
             break
+        default:
+            break
         }
         return imageData
     }

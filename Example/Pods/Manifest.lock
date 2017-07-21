@@ -1,5 +1,6 @@
 PODS:
   - CaptureCenter (0.1.0)
+  - Cartography (1.1.0)
   - FBSnapshotTestCase (2.1.4):
     - FBSnapshotTestCase/SwiftSupport (= 2.1.4)
   - FBSnapshotTestCase/Core (2.1.4)
@@ -16,6 +17,7 @@ PODS:
 
 DEPENDENCIES:
   - CaptureCenter (from `../`)
+  - Cartography
   - FBSnapshotTestCase
   - Nimble (~> 5.1.1)
   - Nimble-Snapshots
@@ -26,12 +28,13 @@ EXTERNAL SOURCES:
     :path: ../
 
 SPEC CHECKSUMS:
-  CaptureCenter: 66e757c78bed2167115e97798a722d61fc30d0c9
+  CaptureCenter: c3b96b1734eb5c36703aa73ea920aedb901109fb
+  Cartography: 0538ccb4044acbbda2266335fc58cb4228794d90
   FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
   Nimble: 415e3aa3267e7bc2c96b05fa814ddea7bb686a29
   Nimble-Snapshots: e743439f26c2fa99d8f7e0d7c01c99bcb40aa6f2
   Quick: 8024e4a47e6cc03a9d5245ef0948264fc6d27cff
 
-PODFILE CHECKSUM: b68aec830626ae1fddbfc53c4bf47bd042e09fd5
+PODFILE CHECKSUM: 0e6b6826ab8f2f1dd6eb8acd37c6e4771e92bfc7
 
 COCOAPODS: 1.2.1

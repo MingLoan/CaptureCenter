@@ -37,15 +37,16 @@ public class PreviewView: UIView {
         return AVCaptureVideoPreviewLayer.self
     }
     
-    override public var frame: CGRect {
-        didSet {
-            // disable implicit CAAnimation
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            layer.frame = bounds
-            CATransaction.commit()
-        }
-    }
+//    override public var frame: CGRect {
+//        didSet {
+//            //print("\(frame)")
+//            // disable implicit CAAnimation
+//            CATransaction.begin()
+//            CATransaction.setDisableActions(true)
+//            //layer.frame = bounds
+//            CATransaction.commit()
+//        }
+//    }
     
     var videoPreviewLayer: AVCaptureVideoPreviewLayer {
         return layer as! AVCaptureVideoPreviewLayer
@@ -63,7 +64,7 @@ public class PreviewView: UIView {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
+        backgroundColor = UIColor.black
         isUserInteractionEnabled = true
         focusView.alpha = 0
         exposureView.alpha = 0
@@ -80,10 +81,39 @@ public class PreviewView: UIView {
         tapGesture.isEnabled = false
         pinchGesture.isEnabled = false
         panGesture.isEnabled = false
+        
+        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(self.orientationChanged(notification:)),
+            name: Notification.Name.UIDeviceOrientationDidChange,
+            object: nil
+        )
     }
     
     required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: Notification.Name.UIDeviceOrientationDidChange, object: nil)
+        UIDevice.current.endGeneratingDeviceOrientationNotifications()
+    }
+    
+    func orientationChanged(notification: Notification) {
+        // handle rotation here
+        guard let connection = videoPreviewLayer.connection else { return }
+        let currentDevice: UIDevice = UIDevice.current
+        let orientation: UIDeviceOrientation = currentDevice.orientation
+        let previewLayerConnection : AVCaptureConnection = connection
+        
+        if previewLayerConnection.isVideoOrientationSupported {
+            if let newOrientation = CaptureCenter.getAVCaptureVideoOrientation(orientation) {
+                if newOrientation != previewLayerConnection.videoOrientation {
+                    previewLayerConnection.videoOrientation = newOrientation
+                }
+            }
+        }
     }
     
     // MARK: - Gestures Handling
@@ -94,7 +124,7 @@ public class PreviewView: UIView {
         let point = gesture.location(in: gesture.view)
         let devicePoint = previewLayer.captureDevicePointOfInterest(for: point)
         
-        captureCenter.focus(with: .continuousAutoFocus, exposureMode: .continuousAutoExposure, at: devicePoint, monitorSubjectAreaChange: true) { [weak self] showUI in
+        captureCenter.focusWithMode(.continuousAutoFocus, exposureMode: .continuousAutoExposure, at: devicePoint, monitorSubjectAreaChange: true) { [weak self] showUI in
             if showUI {
                 self?.showFocusViewAtPoint(point)
             }
@@ -118,7 +148,7 @@ public class PreviewView: UIView {
                         newExposure = 2.0
                     }
                     
-                    captureCenter.expose(with: newExposure)
+                    captureCenter.exposeWithBias(newExposure)
                     setExposureBias(newExposure)
                 }
                 break
@@ -141,7 +171,7 @@ public class PreviewView: UIView {
         case .changed:
             // print("gesture.scale \(gesture.scale)")
             let newScale = min(captureCenter.videoMaxZoomFactor, max(1.0, startZoom + (gesture.scale as CGFloat) - startScale))
-            captureCenter.set(zoomScale: newScale)
+            captureCenter.setZoomScale(newScale)
             break
         default:
             break
@@ -160,7 +190,7 @@ public class PreviewView: UIView {
         focusView.alpha = 0
         exposureView.alpha = 0.0
         exposureView.exposureBias = 0.0
-        captureCenter.expose(with: 0.0)
+        captureCenter.exposeWithBias(0.0)
         
         focusView.center = point
         if focusView.center.x + 70 > bounds.size.width {

@@ -54,6 +54,8 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
             navigationController?.pushViewController(vc, animated: true)
         }
         else {
+            let vc = CameraViewController(nibName: nil, bundle: nil)
+            present(vc, animated: true, completion: nil)
         }
     }
 }
