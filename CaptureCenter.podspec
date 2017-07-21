@@ -9,20 +9,9 @@
 Pod::Spec.new do |s|
   s.name             = 'CaptureCenter'
   s.version          = '0.1.0'
-  s.summary          = 'A short description of CaptureCenter.'
-
-# This description is used to generate tags and improve search results.
-#   * Think: What does it do? Why did you write it? What is the focus?
-#   * Try to keep it short, snappy and to the point.
-#   * Write the description between the DESC delimiters below.
-#   * Finally, don't worry about the indent, CocoaPods strips it!
-
-  s.description      = <<-DESC
-TODO: Add long description of the pod here.
-                       DESC
-
+  s.summary          = 'CaptureCenter is a camera capture library for iOS. CaptureCenter helps you to do everything besides UI.'
+  s.description      = 'CaptureCenter is a custom camera capture library for iOS. You can fit your custom capture layout with CaptureCenter, CaptureCenter helps you to do everything besides UI'
   s.homepage         = 'https://github.com/mingloan/CaptureCenter'
-  # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'mingloan' => 'mingloanchan@gmail.com' }
   s.source           = { :git => 'https://github.com/mingloan/CaptureCenter.git', :tag => s.version.to_s }
@@ -32,11 +21,11 @@ TODO: Add long description of the pod here.
 
   s.source_files = 'CaptureCenter/Classes/**/*'
   
-  s.resource_bundles = {
-    'CaptureCenter' => ['CaptureCenter/Assets/*.{xcassets,json,imageset,png}', 'CaptureCenter/Assets/**/*.{xcassets,json,imageset,png}']
+  s.ios.resource_bundle = {
+    'CaptureCenter' => 'CaptureCenter/Assets/icon.xcassets'
   }
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
   s.frameworks = 'UIKit', 'AVFoundation', 'Photos'
-  # s.dependency 'AFNetworking', '~> 2.3'
+
 end

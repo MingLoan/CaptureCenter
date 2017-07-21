@@ -28,7 +28,7 @@ EXTERNAL SOURCES:
     :path: ../
 
 SPEC CHECKSUMS:
-  CaptureCenter: c3b96b1734eb5c36703aa73ea920aedb901109fb
+  CaptureCenter: 4aed47e08fccdc433e7073a2f1c0278fc7c2b0a2
   Cartography: 0538ccb4044acbbda2266335fc58cb4228794d90
   FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
   Nimble: 415e3aa3267e7bc2c96b05fa814ddea7bb686a29
