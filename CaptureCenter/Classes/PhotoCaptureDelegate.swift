@@ -155,4 +155,9 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         livePhotoCompanionMovieURL = outputFileURL
     }
     
+    // raw data delegates
+    func capture(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingRawPhotoSampleBuffer rawSampleBuffer: CMSampleBuffer?, previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Error?) {
+        
+    }
+    
 }
