@@ -5,6 +5,9 @@
 [![License](https://img.shields.io/cocoapods/l/CaptureCenter.svg?style=flat)](http://cocoapods.org/pods/CaptureCenter)
 [![Platform](https://img.shields.io/cocoapods/p/CaptureCenter.svg?style=flat)](http://cocoapods.org/pods/CaptureCenter)
 
+## Introduction
+
+
 ## Example
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
 
@@ -32,7 +35,7 @@ carthage update --platform iOS
 
 ## Usage
 
-Instantiation:
+### Instantiation
 
 ```
 let captureCenter = CaptureCenter(captureMode: .photo)
@@ -42,7 +45,9 @@ Only **photo** capture mode is supported right now, other modes view be supporte
 ```
 public enum CaptureMode {
     case photo
+    // unsupport now
     case video(size: VideoSize, location: URL, didStart: () -> (), progress: (CGFloat) -> (), willFinish: () -> (), completion: (AVAsset?) -> ())
+    // unsupport now
     case stream
 }
 ```
@@ -74,6 +79,8 @@ To stop capture,
 ```
     captureCenter.stopCapturing()
 ```
+
+
 
 ## Planning
 * support video recording
