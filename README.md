@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/cocoapods/p/CaptureCenter.svg?style=flat)](http://cocoapods.org/pods/CaptureCenter)
 
 ## Introduction
-
+CaptureCenter is not a custom camera cature UI libray. It provides a simple interface layer to bridge functionalities of AVFoundation. CaptureCenter provides interfaces for AVCaptureDevice settings such as focusing, adjusting exposure, applying flash, etc. Moreover, CaptureCenter handles photo capture and video recoprding  pipelines behind the scene. Developers can build their own camera UI with their own UI components or icons and map the UI actions with the interfaces provided from CaptureCenter.
 
 ## Example
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
@@ -80,6 +80,30 @@ To stop capture,
     captureCenter.stopCapturing()
 ```
 
+### take photo
+```
+public func captureWithOptions(_ options: ImageOptions, completion: @escaping ((Data?) -> ()))
+```
+
+### toggle camera
+```
+public func changeCameraWithStartBlock(_ startBlock: (() -> ()), finished endBlock: @escaping ((Bool) -> ()))
+```
+
+### configure focus
+```
+public func focusWithMode(_ focusMode: AVCaptureFocusMode, exposureMode: AVCaptureExposureMode, at devicePoint: CGPoint, monitorSubjectAreaChange: Bool, showUI: @escaping ((Bool) -> ()))
+```
+
+### configure exposure
+```
+public func exposeWithBias(_ exposureBias: CGFloat)
+```
+
+### configure zoom
+```
+public func setZoomScale(_ scale: CGFloat)
+```
 
 
 ## Planning
