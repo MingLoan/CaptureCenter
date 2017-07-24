@@ -111,6 +111,7 @@ public func setZoomScale(_ scale: CGFloat)
 * support streaming
 * support RAW capture
 * improve documentation
+* improve error handling
 
 ## Author
 
