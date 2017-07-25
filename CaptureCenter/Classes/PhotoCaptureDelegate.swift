@@ -8,27 +8,64 @@
 import AVFoundation
 import Photos
 
+func processCaptureData(_ data: Data, options: ImageOptions, captureDevicePosition: AVCaptureDevicePosition, previewViewSize: CGSize) -> CaptureResult {
+    
+    var finalData: Data?
+    
+    // crop image with preview size
+    guard let image = UIImage(data: data), let cgImage = image.cgImage else { return CaptureResult.empty }
+    var finalRect = AVMakeRect(aspectRatio: previewViewSize, insideRect: CGRect(origin: CGPoint.zero, size: image.size))
+    // check whether image rotated after converting to CGImage
+    if Int(image.size.width) == cgImage.height {
+        finalRect = CGRect(x: finalRect.minY, y: finalRect.minX, width: finalRect.height, height: finalRect.width)
+    }
+    guard let imageRef = cgImage.cropping(to: finalRect) else { return CaptureResult.empty }
+    let croppedImage = UIImage(cgImage: imageRef, scale: image.scale, orientation: image.imageOrientation)
+    var flippedImage = croppedImage
+    // flip image for selfie
+    if captureDevicePosition == .front {
+        flippedImage = UIImage(cgImage: imageRef, scale: image.scale, orientation: image.orientationForFlippingHorizontally(source: true))
+    }
+    
+    if case let .custom(width, height) = options.imageSize {
+        let targetSize = Size(width: width, height: height)
+        guard let finalImage = flippedImage.compressToSize(targetSize, outputType: options.imageType) else { return CaptureResult.empty }
+        finalData = UIImageJPEGRepresentation(finalImage, options.JPEGCompression)
+    }
+    else {
+        finalData = UIImageJPEGRepresentation(flippedImage, options.JPEGCompression)
+    }
+    return CaptureResult.stillImage(imageData: finalData!)
+}
+
 @available(iOS 10.0, *)
-class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
+final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     
-    fileprivate(set) var requestedPhotoSettings: AVCapturePhotoSettings
+    private(set) var requestedPhotoSettings: AVCapturePhotoSettings
     
-    fileprivate let willCapturePhotoAnimation: () -> ()
+    private let willCapturePhotoAnimation: () -> ()
     
     private let livePhotoCaptureHandler: (Bool) -> ()
     
-    fileprivate let completionHandler: (PhotoCaptureDelegate, Data?) -> ()
+    private let completionHandler: (PhotoCaptureDelegate, CaptureResult) -> ()
     
-    fileprivate var photoData: Data? = nil
+    private var photoData: Data? = nil
     
     private var livePhotoCompanionMovieURL: URL?
     
+    private weak var captureCenter: CaptureCenter?
+    private var imageOptions: ImageOptions
+    
     init(with requestedPhotoSettings: AVCapturePhotoSettings,
+         captureCenter: CaptureCenter?,
+         imageOptions: ImageOptions,
          willCapturePhotoAnimation: @escaping () -> (),
          livePhotoCaptureHandler: @escaping (Bool) -> (),
-         completionHandler: @escaping (PhotoCaptureDelegate, Data?) -> ()) {
+         completionHandler: @escaping (PhotoCaptureDelegate, CaptureResult) -> ()) {
         
         self.requestedPhotoSettings = requestedPhotoSettings
+        self.captureCenter = captureCenter
+        self.imageOptions = imageOptions
         self.willCapturePhotoAnimation = willCapturePhotoAnimation
         self.livePhotoCaptureHandler = livePhotoCaptureHandler
         self.completionHandler = completionHandler
@@ -75,67 +112,75 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         }
     }
     
+    // Final delegate method, for cleaning up resources
     func capture(_ captureOutput: AVCapturePhotoOutput, didFinishCaptureForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings, error: Error?) {
         
         if let error = error {
             print("Error capturing photo: \(error)")
-            completionHandler(self, nil)
+            completionHandler(self, CaptureResult.empty)
             return
         }
         
         guard let photoData = photoData else {
             print("No photo data resource")
-            completionHandler(self, nil)
+            completionHandler(self, CaptureResult.empty)
             return
         }
         
-        
-        if let livePhotoCompanionMoviePath = livePhotoCompanionMovieURL?.path {
-            print("return live photo")
-            // live photo capture
-            if FileManager.default.fileExists(atPath: livePhotoCompanionMoviePath) {
-                do {
-                    try FileManager.default.removeItem(atPath: livePhotoCompanionMoviePath)
-                } catch {
-                    print("Could not remove file at url: \(livePhotoCompanionMoviePath)")
+        let afterSavingToLibrary: (PHAsset?) -> () = { asset in
+            if let _ = self.livePhotoCompanionMovieURL {
+                print("return live photo")
+                guard let asset = asset else {
+                    self.completionHandler(self, CaptureResult.empty)
+                    return
                 }
+                self.processLivePhotoWithPHAsset(asset)
+            }
+            else {
+                print("process still image")
+                self.completionHandler(self, self.processStillImage())
             }
         }
-        else {
-            print("return still image")
-            // still image capture
-            completionHandler(self, photoData)
+        
+        PHPhotoLibrary.requestAuthorization { [unowned self] status in
+            if status == .authorized {
+                
+                var placeholderIdentifier: String?
+                PHPhotoLibrary.shared().performChanges({ [unowned self] in
+                    
+                    let creationRequest = PHAssetCreationRequest.forAsset()
+                    let options = PHAssetResourceCreationOptions()
+                    //options.uniformTypeIdentifier = self.requestedPhotoSettings.processedFileType.map { $0.rawValue }
+                    creationRequest.addResource(with: .photo, data: photoData, options: options)
+                    
+                    if let livePhotoCompanionMovieURL = self.livePhotoCompanionMovieURL {
+                        let livePhotoCompanionMovieFileResourceOptions = PHAssetResourceCreationOptions()
+                        livePhotoCompanionMovieFileResourceOptions.shouldMoveFile = true
+                        creationRequest.addResource(with: .pairedVideo, fileURL: livePhotoCompanionMovieURL, options: livePhotoCompanionMovieFileResourceOptions)
+                    }
+                    
+                    placeholderIdentifier = creationRequest.placeholderForCreatedAsset?.localIdentifier
+                    
+                }, completionHandler: { _, error in
+                    if let error = error {
+                        print("Error occurered while saving photo to photo library: \(error)")
+                    }
+                    guard let placeholderIdentifier = placeholderIdentifier else {
+                        print("no placeholder asset")
+                        return
+                    }
+                    let assets = PHAsset.fetchAssets(withLocalIdentifiers: [placeholderIdentifier], options: nil)
+                    guard let asset = assets.firstObject else {
+                        print("cannot fetch asset")
+                        return
+                    }
+                    afterSavingToLibrary(asset)
+                })
+            }
+            else {
+                afterSavingToLibrary(nil)
+            }
         }
-        
-        
-        // save to album
-        /*
-         PHPhotoLibrary.requestAuthorization { [unowned self] status in
-         if status == .authorized {
-         PHPhotoLibrary.shared().performChanges({ [unowned self] in
-         let options = PHAssetResourceCreationOptions()
-         let creationRequest = PHAssetCreationRequest.forAsset()
-         //options.uniformTypeIdentifier = self.requestedPhotoSettings.processedFileType.map { $0.rawValue }
-         creationRequest.addResource(with: .photo, data: photoData, options: options)
-         
-         if let livePhotoCompanionMovieURL = self.livePhotoCompanionMovieURL {
-         let livePhotoCompanionMovieFileResourceOptions = PHAssetResourceCreationOptions()
-         livePhotoCompanionMovieFileResourceOptions.shouldMoveFile = true
-         creationRequest.addResource(with: .pairedVideo, fileURL: livePhotoCompanionMovieURL, options: livePhotoCompanionMovieFileResourceOptions)
-         }
-         
-         }, completionHandler: { [unowned self] _, error in
-         if let error = error {
-         print("Error occurered while saving photo to photo library: \(error)")
-         }
-         
-         self.didFinish()
-         }
-         )
-         } else {
-         self.didFinish()
-         }
-         }*/
     }
     
     // Live photos delegates
@@ -160,4 +205,37 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         
     }
     
+    // private methods
+    private func processStillImage() -> CaptureResult {
+        guard let captureCenter = captureCenter, let photoData = photoData else {
+            return CaptureResult.empty
+        }
+        let previewViewSize = captureCenter.previewView.bounds.size
+        let captureDevicePosition = captureCenter.captureDevicePosition
+        return processCaptureData(photoData, options: imageOptions, captureDevicePosition: captureDevicePosition, previewViewSize: previewViewSize)
+    }
+    
+    private func processLivePhotoWithPHAsset(_ asset: PHAsset) {
+        guard let _ = livePhotoCompanionMovieURL else {
+            completionHandler(self, CaptureResult.empty)
+            return
+        }
+        var targetSize = CGSize.zero
+        if case let .custom(width, height) = imageOptions.imageSize {
+            targetSize = CGSize(width: width, height: height)
+        }
+        PHImageManager.default().requestLivePhoto(for: asset,
+                                                  targetSize: targetSize,
+                                                  contentMode: .aspectFill,
+                                                  options: nil) { (livePhoto, info) in
+                                                    if let info = info, let isThumbnail = info[PHImageResultIsDegradedKey] as? Bool, isThumbnail {
+                                                        return
+                                                    }
+                                                    guard let livePhoto = livePhoto else {
+                                                        self.completionHandler(self, CaptureResult.empty)
+                                                        return
+                                                    }
+                                                    self.completionHandler(self, CaptureResult.livePhoto(livePhoto: livePhoto))
+                                                }
+    }
 }

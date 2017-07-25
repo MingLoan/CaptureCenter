@@ -11,31 +11,25 @@ import UIKit
 import Photos
 import PhotosUI
 import AVFoundation
+import CaptureCenter
 
 class ResultsViewController: UIViewController {
     
-    enum ResultType {
-        case stillImage(image: UIImage)
-        //@available(iOS 9.1, *)
-        case livePhoto(livePhoto: PHLivePhoto)
-        case video(video: AVAsset)
-    }
+    var result = CaptureResult.stillImage(imageData: Data())
     
-    var resultType = ResultType.stillImage(image: UIImage())
-    
-    convenience init(resultType: ResultType) {
+    convenience init(result: CaptureResult) {
         self.init(nibName: nil, bundle: nil)
-        self.resultType = resultType
+        self.result = result
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor.white
         
-        switch resultType {
-        case .stillImage(let image):
+        switch result {
+        case .stillImage(let imageData):
             print("displaying still image captured")
-            let imageView = UIImageView(image: image)
+            let imageView = UIImageView(image: UIImage(data: imageData))
             imageView.frame = CGRect(x: 0, y: 100, width: view.frame.width, height: view.frame.width)
             imageView.contentMode = .scaleAspectFit
             view.addSubview(imageView)
@@ -47,7 +41,7 @@ class ResultsViewController: UIViewController {
             livePhotoView.livePhoto = livePhoto
             view.addSubview(livePhotoView)
             break
-        case .video(let video):
+        default:
             break
         }
     }

@@ -8,27 +8,6 @@
 import Foundation
 import AVFoundation
 
-public enum VideoSize {
-    case duration(timeInterval: TimeInterval)
-    case fileSize(bytes: Int64)
-}
-
-public enum CaptureMode {
-    case photo
-    case video(size: VideoSize, location: URL, didStart: () -> (), progress: (CGFloat) -> (), willFinish: () -> (), completion: (AVAsset?) -> ())
-    case stream
-}
-public func ==(lhs: CaptureMode, rhs: CaptureMode) -> Bool {
-    switch (lhs, rhs) {
-    case (.photo, .photo),
-         (.video(_, _, _, _, _, _), .video(_, _, _, _, _, _)),
-         (.stream, .stream):
-        return true
-    default:
-        return false
-    }
-}
-
 public final class CaptureCenter {
     
     // MARK: - Factory Methods
@@ -76,16 +55,12 @@ public final class CaptureCenter {
             setTorchMode(currentTorchMode)
         }
     }
-
     // value from 0 to 1
     var zoomPercentage: CGFloat = 0
     
-    // capture mode
-    fileprivate(set) public var captureMode = CaptureMode.photo
-    
     // Public Readonly Properties
+    fileprivate(set) public var captureMode = CaptureMode.photo
     fileprivate(set) public var isSessionRunning = false
-    fileprivate(set) public var isSessionCongifured = false
     fileprivate(set) public var hasFlash = false
     fileprivate(set) public var hasTorch = false
     fileprivate(set) public var videoMaxZoomFactor: CGFloat = 1
@@ -98,9 +73,10 @@ public final class CaptureCenter {
             }
         }
     }
+    fileprivate(set) public var cameraControls = false
     
     // Private Properties
-    fileprivate(set) public var cameraControls = false
+    fileprivate(set) var isSessionCongifured = false
     
     fileprivate enum SessionSetupResult {
         case success
@@ -109,14 +85,12 @@ public final class CaptureCenter {
     }
     
     fileprivate let session = AVCaptureSession()
-    
     fileprivate let sessionQueue = DispatchQueue(label: "session queue", attributes: [])
-    
     fileprivate var setupResult: SessionSetupResult = .success
     
     // MARK: - CaptureDeviceInput
     fileprivate var videoDeviceInput: AVCaptureDeviceInput?
-    fileprivate var captureDevicePosition = AVCaptureDevicePosition.unspecified
+    internal var captureDevicePosition = AVCaptureDevicePosition.unspecified
     fileprivate var audioDeviceInput: AVCaptureDeviceInput?
     
     // MARK: - CaptureDeviceOutput
@@ -126,22 +100,13 @@ public final class CaptureCenter {
         stillImageOutput.outputSettings = [AVVideoCodecKey: AVVideoCodecJPEG]
         return stillImageOutput
     }()
-    
     // iOS 10 Photo Output
     fileprivate var _photoOutput: AnyObject?
     fileprivate var inProgressPhotoCaptureDelegates = [Int64 : AnyObject]()
-    
     @available(iOS 10.0, *)
     fileprivate var photoOutput: AVCapturePhotoOutput? {
         get {
-            if let photoOutput = _photoOutput as? AVCapturePhotoOutput {
-                return photoOutput
-            }
-            let output = AVCapturePhotoOutput()
-            output.isHighResolutionCaptureEnabled = true
-            output.isLivePhotoCaptureEnabled = output.isLivePhotoCaptureSupported
-            _photoOutput = output
-            return output
+            return _photoOutput as? AVCapturePhotoOutput
         }
         set {
             _photoOutput = newValue
@@ -262,7 +227,7 @@ public final class CaptureCenter {
         }
     }
     
-    public func captureWithOptions(_ options: ImageOptions, completion: @escaping ((Data?) -> ())) {
+    public func captureWithOptions(_ options: ImageOptions, completion: @escaping ((CaptureResult) -> ())) {
         
         sessionQueue.async { [weak self] in
             guard let strongSelf = self else { return }
@@ -302,11 +267,20 @@ public final class CaptureCenter {
                     let livePhotoMovieFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((livePhotoMovieFileName as NSString).appendingPathExtension("mov")!)
                     photoSettings.livePhotoMovieFileURL = URL(fileURLWithPath: livePhotoMovieFilePath)
                 }
+                /*
+                if self.depthDataDeliveryMode == .on && self.photoOutput.isDepthDataDeliverySupported {
+                    photoSettings.isDepthDataDeliveryEnabled = true
+                } else {
+                    photoSettings.isDepthDataDeliveryEnabled = false
+                }
+                */
                 
                 // Use a separate object for the photo capture delegate to isolate each capture life cycle.
                 let photoCaptureDelegate =
                     PhotoCaptureDelegate(
                         with: photoSettings,
+                        captureCenter: self,
+                        imageOptions: options,
                         willCapturePhotoAnimation: { [weak strongSelf] in
                             DispatchQueue.main.async {
                                 strongSelf?.previewView.videoPreviewLayer.opacity = 0
@@ -315,18 +289,35 @@ public final class CaptureCenter {
                                 })
                             }
                         }, livePhotoCaptureHandler: { started in
-                            
-                        }, completionHandler: { [weak strongSelf] photoCaptureDelegate, data in
-                            guard let innerStrongSelf = strongSelf else { return }
-                        
-                            guard let imageData = data else {
-                                DispatchQueue.main.async {
-                                    completion(nil)
+                            /*
+                             Because Live Photo captures can overlap, we need to keep track of the
+                             number of in progress Live Photo captures to ensure that the
+                             Live Photo label stays visible during these captures.
+                             */
+                            /*
+                            self.sessionQueue.async { [unowned self] in
+                                if capturing {
+                                    self.inProgressLivePhotoCapturesCount += 1
+                                } else {
+                                    self.inProgressLivePhotoCapturesCount -= 1
                                 }
-                                return
+                                
+                                let inProgressLivePhotoCapturesCount = self.inProgressLivePhotoCapturesCount
+                                DispatchQueue.main.async { [unowned self] in
+                                    if inProgressLivePhotoCapturesCount > 0 {
+                                        self.capturingLivePhotoLabel.isHidden = false
+                                    } else if inProgressLivePhotoCapturesCount == 0 {
+                                        self.capturingLivePhotoLabel.isHidden = true
+                                    } else {
+                                        print("Error: In progress live photo capture count is less than 0")
+                                    }
+                                }
+                            }*/
+                        }, completionHandler: { [weak strongSelf] photoCaptureDelegate, result in
+                            guard let innerStrongSelf = strongSelf else { return }
+                            DispatchQueue.main.async {
+                                completion(result)
                             }
-                            innerStrongSelf.processCaptureData(imageData as Data, options: options, completion: completion)
-
                             // When the capture is complete, remove a reference to the photo capture delegate so it can be deallocated.
                             innerStrongSelf.sessionQueue.async { [weak innerStrongSelf] in
                                 innerStrongSelf?.inProgressPhotoCaptureDelegates[photoCaptureDelegate.requestedPhotoSettings.uniqueID] = nil
@@ -351,7 +342,7 @@ public final class CaptureCenter {
                     guard let innerStrongSelf = strongSelf else { return }
                     
                     if let _ = error {
-                        completion(nil)
+                        completion(CaptureResult.empty)
                         return
                     }
                     
@@ -361,43 +352,10 @@ public final class CaptureCenter {
 //                    }
                     
                     let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(sampleBuffer)
-                    innerStrongSelf.processCaptureData(imageData!, options: options, completion: completion)
+                    let result = processCaptureData(imageData!, options: options, captureDevicePosition: innerStrongSelf.captureDevicePosition, previewViewSize: innerStrongSelf.previewView.bounds.size)
+                    completion(result)
                 }
             }
-        }
-    }
-    
-    fileprivate func processCaptureData(_ data: Data, options: ImageOptions, completion: @escaping ((Data?) -> ())) {
-        
-        var finalData: Data?
-        defer {
-            DispatchQueue.main.async {
-                completion(finalData)
-            }
-        }
-        
-        // crop image with preview size
-        guard let image = UIImage(data: data), let cgImage = image.cgImage else { return }
-        var finalRect = AVMakeRect(aspectRatio: previewView.bounds.size, insideRect: CGRect(origin: CGPoint.zero, size: image.size))
-        // check whether image rotated after converting to CGImage
-        if Int(image.size.width) == cgImage.height {
-            finalRect = CGRect(x: finalRect.minY, y: finalRect.minX, width: finalRect.height, height: finalRect.width)
-        }
-        guard let imageRef = cgImage.cropping(to: finalRect) else { return }
-        let croppedImage = UIImage(cgImage: imageRef, scale: image.scale, orientation: image.imageOrientation)
-        var flippedImage = croppedImage
-        // flip image for selfie
-        if captureDevicePosition == .front {
-            flippedImage = UIImage(cgImage: imageRef, scale: image.scale, orientation: image.orientationForFlippingHorizontally(source: true))
-        }
-
-        if case let .custom(width, height) = options.imageSize {
-            let targetSize = Size(width: width, height: height)
-            guard let finalImage = flippedImage.compressToSize(targetSize, outputType: options.imageType) else { return }
-            finalData = UIImageJPEGRepresentation(finalImage, options.JPEGCompression)
-        }
-        else {
-            finalData = UIImageJPEGRepresentation(flippedImage, options.JPEGCompression)
         }
     }
     
@@ -448,6 +406,7 @@ public final class CaptureCenter {
         }
     }
     
+    // MARK: - Configure Capture Session
     // Call this on the session queue.
     fileprivate func configureSessionWithCaptureDevicePosition(_ devicePosition: AVCaptureDevicePosition) {
         if setupResult != .success {
@@ -456,12 +415,20 @@ public final class CaptureCenter {
         
         session.beginConfiguration()
         
-        /*
-         We do not create an AVCaptureMovieFileOutput when setting up the session because the
-         AVCaptureMovieFileOutput does not support movie recording with AVCaptureSessionPresetPhoto.
-         */
-        session.sessionPreset = AVCaptureSessionPresetPhoto
+        switch captureMode {
+        case .photo:
+            /*
+             We do not create an AVCaptureMovieFileOutput when setting up the session because the
+             AVCaptureMovieFileOutput does not support movie recording with AVCaptureSessionPresetPhoto.
+             */
+            session.sessionPreset = AVCaptureSessionPresetPhoto
+            break
+        default:
+            session.sessionPreset = AVCaptureSessionPresetHigh
+            break
+        }
         
+        // add video input
         var videoDevice: AVCaptureDevice?
         if devicePosition == .back {
             if #available(iOS 10.0, *) {
@@ -472,8 +439,8 @@ public final class CaptureCenter {
                     // If the back dual camera is not available, default to the back wide angle camera.
                     videoDevice = backCameraDevice
                 }
-                else {
-                    videoDevice = deviceWithPosition(devicePosition)
+                else if let frontCameraDevice = AVCaptureDevice.defaultDevice(withDeviceType: AVCaptureDeviceType.builtInWideAngleCamera, mediaType: AVMediaTypeVideo, position: .front) {
+                    videoDevice = frontCameraDevice
                 }
             }
             else {
@@ -491,27 +458,9 @@ public final class CaptureCenter {
         
         guard let device = videoDevice else { return }
         
-        // Add video input.
         do {
             let videoDeviceInput = try AVCaptureDeviceInput(device: device)
-
-            videoMaxZoomFactor = device.activeFormat.videoMaxZoomFactor
-            
-            if device.hasFlash {
-                hasFlash = true
-                currentFlashMode = device.flashMode
-            }
-            else {
-                hasFlash = false
-            }
-            
-            if device.hasTorch {
-                hasTorch = true
-                currentTorchMode = device.torchMode
-            }
-            else {
-                hasTorch = false
-            }
+            // videoMaxZoomFactor = device.activeFormat.videoMaxZoomFactor
             
             if session.canAddInput(videoDeviceInput) {
                 session.addInput(videoDeviceInput)
@@ -528,33 +477,104 @@ public final class CaptureCenter {
             else {
                 print("Could not add video device input to the session")
                 setupResult = .configurationFailed
+                session.commitConfiguration()
                 return
             }
         }
         catch {
             print("Could not create video device input: \(error)")
             setupResult = .configurationFailed
+            session.commitConfiguration()
             return
         }
         
-        switch captureMode {
-        case .photo:
-            if !configureSessionForPhotoMode(session) {
-                setupResult = .configurationFailed
+        // add audio input
+        do {
+            let audioDevice = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeAudio)
+            let audioDeviceInput = try AVCaptureDeviceInput(device: audioDevice)
+            self.audioDeviceInput = audioDeviceInput
+            
+            if session.canAddInput(audioDeviceInput) {
+                session.addInput(audioDeviceInput)
             }
-            break
+            else {
+                print("Could not add audio device input to the session")
+                setupResult = .configurationFailed
+                session.commitConfiguration()
+                return
+            }
+        }
+        catch {
+            print("Could not create audio device input: \(error)")
+            setupResult = .configurationFailed
+            session.commitConfiguration()
+            return
+        }
+        
+        // add photo/image output
+        if #available(iOS 10.0, *) {
+            let output = AVCapturePhotoOutput()
+            if session.canAddOutput(output) {
+                session.addOutput(output)
+                output.isHighResolutionCaptureEnabled = true
+                print("isLivePhotoCaptureSupported: \(output.isLivePhotoCaptureSupported)")
+                output.isLivePhotoCaptureEnabled = output.isLivePhotoCaptureSupported
+                // output.isDepthDataDeliveryEnabled = output.isDepthDataDeliverySupported
+                photoOutput = output
+            }
+            else {
+                print("Could not add photo output to the session")
+                setupResult = .configurationFailed
+                session.commitConfiguration()
+                return
+            }
+        }
+        else {
+            if session.canAddOutput(imageOutput) {
+                session.addOutput(imageOutput)
+            }
+            else {
+                print("Could not add photo output to the session")
+                setupResult = .configurationFailed
+                session.commitConfiguration()
+                return
+            }
+        }
+        
+        switch captureMode {
         case .video(let size, _, _, _, _, _):
             if !configureSessionForVideoMode(session, videoSize: size) {
                 setupResult = .configurationFailed
+                session.commitConfiguration()
+                return
             }
             break
         case .stream:
+            break
+        default:
             break
         }
         
         
         isSessionCongifured = true
         session.commitConfiguration()
+        
+        // device setups
+        if device.hasFlash {
+            hasFlash = true
+            currentFlashMode = device.flashMode
+        }
+        else {
+            hasFlash = false
+        }
+        
+        if device.hasTorch {
+            hasTorch = true
+            currentTorchMode = device.torchMode
+        }
+        else {
+            hasTorch = false
+        }
         
         if let device = self.videoDeviceInput?.device {
             do {
@@ -582,35 +602,22 @@ public final class CaptureCenter {
             
             switch mode {
             case .photo:
-                
                 /*
                  Remove the AVCaptureMovieFileOutput from the session because movie recording is
                  not supported with AVCaptureSessionPresetPhoto. Additionally, Live Photo
                  capture is not supported when an AVCaptureMovieFileOutput is connected to the session.
                  */
                 strongSelf.session.removeOutput(strongSelf.movieFileOutput)
-                strongSelf.session.sessionPreset = AVCaptureSessionPresetPhoto
-                
                 // Remove movieFileOutput
                 strongSelf.movieFileOutput = nil
-                
-                // Remove audio input.
-                if let audioDeviceInput = strongSelf.audioDeviceInput {
-                    strongSelf.session.removeInput(audioDeviceInput)
-                }
-                
-                if !strongSelf.configureSessionForPhotoMode(strongSelf.session) {
-                    print("toggle errer")
+                strongSelf.session.sessionPreset = AVCaptureSessionPresetPhoto
+                if #available(iOS 10.0, *) {
+                    if let output = strongSelf.photoOutput {
+                        output.isLivePhotoCaptureEnabled = output.isLivePhotoCaptureSupported
+                    }
                 }
                 break
             case .video(let size, _, _, _, _, _):
-                // remove photo output.
-                if #available(iOS 10.0, *) {
-                    strongSelf.session.removeOutput(strongSelf.photoOutput)
-                }
-                else {
-                    strongSelf.session.removeOutput(strongSelf.imageOutput)
-                }
                 if !strongSelf.configureSessionForVideoMode(strongSelf.session, videoSize: size) {
                     print("toggle errer")
                 }
@@ -627,52 +634,9 @@ public final class CaptureCenter {
         }
     }
     
-    private func configureSessionForPhotoMode(_ session: AVCaptureSession) -> Bool {
-        session.sessionPreset = AVCaptureSessionPresetPhoto
-        if #available(iOS 10.0, *) {
-            // Add photo output.
-            if session.canAddOutput(photoOutput) {
-                session.addOutput(photoOutput)
-            }
-            else {
-                print("Could not add photo output to the session")
-                return false
-            }
-        }
-        else {
-            // Add image output.
-            if session.canAddOutput(imageOutput) {
-                session.addOutput(imageOutput)
-            }
-            else {
-                print("Could not add photo output to the session")
-                return false
-            }
-        }
-        return true
-    }
-    
     private func configureSessionForVideoMode(_ session: AVCaptureSession, videoSize: VideoSize) -> Bool {
-        session.sessionPreset = AVCaptureSessionPreset1920x1080
-        // Add audio input.
-        do {
-            let audioDevice = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeAudio)
-            let audioDeviceInput = try AVCaptureDeviceInput(device: audioDevice)
-            self.audioDeviceInput = audioDeviceInput
-            
-            if session.canAddInput(audioDeviceInput) {
-                session.addInput(audioDeviceInput)
-            }
-            else {
-                print("Could not add audio device input to the session")
-                return false
-            }
-        }
-        catch {
-            print("Could not create audio device input: \(error)")
-            return false
-        }
-        
+        session.sessionPreset = AVCaptureSessionPresetHigh
+
         let movieFileOutput = AVCaptureMovieFileOutput()
         switch videoSize {
         case .duration(let seconds):
@@ -687,7 +651,6 @@ public final class CaptureCenter {
         movieFileOutput.movieFragmentInterval = kCMTimeInvalid
         
         if session.canAddOutput(movieFileOutput) {
-            
             session.addOutput(movieFileOutput)
             session.sessionPreset = AVCaptureSessionPresetMedium
             
@@ -804,12 +767,17 @@ public final class CaptureCenter {
                     }
                 }
                 /*
-                 Set Live Photo capture enabled if it is supported. When changing cameras, the
-                 `isLivePhotoCaptureEnabled` property of the AVCapturePhotoOutput gets set to NO when
+                 Set Live Photo capture and depth data delivery if it is supported. When changing cameras, the
+                 `livePhotoCaptureEnabled and depthDataDeliveryEnabled` properties of the AVCapturePhotoOutput gets set to NO when
                  a video device is disconnected from the session. After the new video device is
-                 added to the session, re-enable Live Photo capture on the AVCapturePhotoOutput if it is supported.
+                 added to the session, re-enable them on the AVCapturePhotoOutput if it is supported.
                  */
-                //self.photoOutput.isLivePhotoCaptureEnabled = self.photoOutput.isLivePhotoCaptureSupported;
+                if #available(iOS 10.0, *) {
+                    if let photoOutput = strongSelf.photoOutput {
+                        photoOutput.isLivePhotoCaptureEnabled = photoOutput.isLivePhotoCaptureSupported
+                        // photoOutput.isDepthDataDeliveryEnabled = photoOutput.isDepthDataDeliverySupported
+                    }
+                }
                 
                 strongSelf.session.commitConfiguration()
             }
@@ -1057,22 +1025,18 @@ public final class CaptureCenter {
          music playback in control center will not automatically resume the session
          running. Also note that it is not always possible to resume, see `resumeInterruptedSession(_:)`.
          */
-        if #available(iOS 9.0, *) {
-            if let userInfoValue = notification.userInfo?[AVCaptureSessionInterruptionReasonKey] as AnyObject?,
-                let reasonIntegerValue = userInfoValue.integerValue,
-                let reason = AVCaptureSessionInterruptionReason(rawValue: reasonIntegerValue) {
-                
-                print("Capture session was interrupted with reason \(reason)")
-                
-                if reason == AVCaptureSessionInterruptionReason.audioDeviceInUseByAnotherClient || reason == AVCaptureSessionInterruptionReason.videoDeviceInUseByAnotherClient {
-                    // retry 5 seconds later
-                    ScheduledTimer.schedule(5, block: { [weak self] _ in
-                        self?.resumeInterruptedSession()
-                    })
-                }
+        if let userInfoValue = notification.userInfo?[AVCaptureSessionInterruptionReasonKey] as AnyObject?,
+            let reasonIntegerValue = userInfoValue.integerValue,
+            let reason = AVCaptureSessionInterruptionReason(rawValue: reasonIntegerValue) {
+            
+            print("Capture session was interrupted with reason \(reason)")
+            
+            if reason == AVCaptureSessionInterruptionReason.audioDeviceInUseByAnotherClient || reason == AVCaptureSessionInterruptionReason.videoDeviceInUseByAnotherClient {
+                // retry 5 seconds later
+                ScheduledTimer.schedule(5, block: { [weak self] _ in
+                    self?.resumeInterruptedSession()
+                })
             }
-        } else {
-            // Fallback on earlier versions
         }
     }
         

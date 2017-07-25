@@ -76,7 +76,7 @@ private final class CameraPreviewContainerView: UIView {
 
 class CameraViewController: UIViewController {
     
-    var callback: (Any) -> () = { _ in }
+    var callback: (CaptureResult) -> () = { _ in }
     fileprivate var isSquared = true
     fileprivate var canCaptureVideo = true
     
@@ -368,12 +368,11 @@ class CameraViewController: UIViewController {
             let options = ImageOptions(imageType: .livePhoto, imageSize: .custom(width: 1080, height: 1080), JPEGCompression: 0.9)
             // let options = ImageOptions(imageType: .livePhoto, imageSize: .normal, JPEGCompression: 0.9)
             // let options = ImageOptions(imageType: .livePhoto, imageSize: .highResolution, JPEGCompression: 0.9)
-            captureCenter.captureWithOptions(options) { [unowned self] data in
+            captureCenter.captureWithOptions(options) { [unowned self] captureResult in
                 // return in main thread
                 UIApplication.shared.endIgnoringInteractionEvents()
                 // upload image and send
-                guard let imageData = data, let img = UIImage(data: imageData) else { return }
-                self.callback(img)
+                self.callback(captureResult)
                 self.dismiss(animated: true, completion: nil)
             }
             break

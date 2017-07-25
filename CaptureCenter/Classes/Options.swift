@@ -1,5 +1,5 @@
 //
-//  ImageType.swift
+//  Options.swift
 //  Pods
 //
 //  Created by Mingloan Chan on 7/19/17.
@@ -18,6 +18,11 @@ public enum ImageSize {
     case normal
     case highResolution // fallback to normal if high res photo capture is not supported
     case custom(width: CGFloat, height: CGFloat)
+}
+
+public enum VideoSize {
+    case duration(timeInterval: TimeInterval)
+    case fileSize(bytes: Int64)
 }
 
 public struct ImageOptions {
