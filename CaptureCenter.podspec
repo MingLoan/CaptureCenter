@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CaptureCenter'
-  s.version          = '0.1.2'
+  s.version          = '0.1.3'
   s.summary          = 'CaptureCenter is a camera capture library for iOS. CaptureCenter helps you to do everything besides UI.'
   s.description      = 'CaptureCenter is a custom camera capture library for iOS. You can fit your custom capture layout with CaptureCenter, CaptureCenter helps you to do everything besides UI'
   s.homepage         = 'https://github.com/mingloan/CaptureCenter'

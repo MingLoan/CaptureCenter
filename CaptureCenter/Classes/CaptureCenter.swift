@@ -11,18 +11,16 @@ import AVFoundation
 public final class CaptureCenter {
     
     // MARK: - Factory Methods
-    static func getAVCaptureVideoOrientation(_ orientation: UIDeviceOrientation) -> AVCaptureVideoOrientation? {
+    static func getAVCaptureVideoOrientation(_ orientation: UIInterfaceOrientation) -> AVCaptureVideoOrientation? {
         switch orientation {
-        case .portrait:
+        case .portrait, .unknown:
             return .portrait
         case .portraitUpsideDown:
             return .portraitUpsideDown
         case .landscapeLeft:
-            return .landscapeRight
-        case .landscapeRight:
             return .landscapeLeft
-        default:
-            return nil
+        case .landscapeRight:
+            return .landscapeRight
         }
     }
     

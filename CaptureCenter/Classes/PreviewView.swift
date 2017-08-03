@@ -103,12 +103,13 @@ public class PreviewView: UIView {
     func orientationChanged(notification: Notification) {
         // handle rotation here
         guard let connection = videoPreviewLayer.connection else { return }
-        let currentDevice: UIDevice = UIDevice.current
-        let orientation: UIDeviceOrientation = currentDevice.orientation
+        
+        let interfaceOrientation: UIInterfaceOrientation = UIApplication.shared.statusBarOrientation
+        
         let previewLayerConnection : AVCaptureConnection = connection
         
         if previewLayerConnection.isVideoOrientationSupported {
-            if let newOrientation = CaptureCenter.getAVCaptureVideoOrientation(orientation) {
+            if let newOrientation = CaptureCenter.getAVCaptureVideoOrientation(interfaceOrientation) {
                 if newOrientation != previewLayerConnection.videoOrientation {
                     previewLayerConnection.videoOrientation = newOrientation
                 }
