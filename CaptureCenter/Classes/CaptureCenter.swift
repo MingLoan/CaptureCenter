@@ -37,6 +37,7 @@ public final class CaptureCenter {
     }
     
     // Public Properties
+    public var hidesFocusControlUI = false
     public let previewView = PreviewView()
     public var currentFlashMode = AVCaptureFlashMode.off {
         didSet {
@@ -820,8 +821,10 @@ public final class CaptureCenter {
                 do {
                     try device.lockForConfiguration()
                     
-                    DispatchQueue.main.async {
-                        showUI( !(!device.isFocusPointOfInterestSupported && !device.isExposurePointOfInterestSupported) )
+                    if !strongSelf.hidesFocusControlUI {
+                        DispatchQueue.main.async {
+                            showUI( !(!device.isFocusPointOfInterestSupported && !device.isExposurePointOfInterestSupported) )
+                        }
                     }
 
                     /*

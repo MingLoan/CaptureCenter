@@ -18,6 +18,9 @@ class CameraPreviewViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // you can hides focus control UI
+        // captureCenter.hidesFocusControlUI = true
+        
         // get preview view of capture center and set its frame
         captureCenter.previewView.frame = CGRect(x: 0, y: 64, width: view.frame.width, height: view.frame.width)
         view.addSubview(captureCenter.previewView)
