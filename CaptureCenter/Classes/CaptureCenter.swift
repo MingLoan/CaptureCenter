@@ -256,8 +256,8 @@ public final class CaptureCenter {
                     photoSettings.isHighResolutionPhotoEnabled = false
                 }
                 
-                if photoSettings.availablePreviewPhotoPixelFormatTypes.count > 0 {
-                    photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String : photoSettings.availablePreviewPhotoPixelFormatTypes.first!]
+                if photoSettings.__availablePreviewPhotoPixelFormatTypes.count > 0 {
+                    photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String : photoSettings.__availablePreviewPhotoPixelFormatTypes.first!]
                 }
                 
                 // Live Photo capture is not supported in movie mode.

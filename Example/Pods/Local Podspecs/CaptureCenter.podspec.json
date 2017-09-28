@@ -1,6 +1,6 @@
 {
   "name": "CaptureCenter",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "summary": "CaptureCenter is a camera capture library for iOS. CaptureCenter helps you to do everything besides UI.",
   "description": "CaptureCenter is a custom camera capture library for iOS. You can fit your custom capture layout with CaptureCenter, CaptureCenter helps you to do everything besides UI",
   "homepage": "https://github.com/mingloan/CaptureCenter",
@@ -13,7 +13,7 @@
   },
   "source": {
     "git": "https://github.com/mingloan/CaptureCenter.git",
-    "tag": "0.1.0"
+    "tag": "0.1.4"
   },
   "social_media_url": "https://twitter.com/mingloan",
   "platforms": {
