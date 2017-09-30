@@ -964,10 +964,12 @@ public final class CaptureCenter {
     }
     
     @objc fileprivate func subjectAreaDidChange(_ notification: Notification) {
+        
+        let previewCenterPoint = CGPoint(x: previewView.bounds.width/2, y: previewView.bounds.height/2)
+        let devicePoint = previewView.videoPreviewLayer.captureDevicePointConverted(fromLayerPoint: previewCenterPoint)
+        
         sessionQueue.async { [weak self] in
             guard let strongSelf = self else { return }
-            let previewCenterPoint = CGPoint(x: strongSelf.previewView.bounds.width/2, y: strongSelf.previewView.bounds.height/2)
-            let devicePoint = strongSelf.previewView.videoPreviewLayer.captureDevicePointConverted(fromLayerPoint: previewCenterPoint)
             
             strongSelf.exposeWithBias(0)
             strongSelf.focusWithMode(.continuousAutoFocus, exposureMode: .continuousAutoExposure, at: devicePoint, monitorSubjectAreaChange: true) { [weak strongSelf] showUI in
