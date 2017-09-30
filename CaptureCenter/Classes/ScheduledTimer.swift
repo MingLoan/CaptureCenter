@@ -31,7 +31,7 @@ class ScheduledTimer {
                     flags: DispatchSource.TimerFlags(rawValue: UInt(0)),
                     queue: DispatchQueue.global(qos: DispatchQoS.QoSClass.default))
             
-            timer.scheduleOneshot(deadline: DispatchTime.now() + intervalFromNow)
+            timer.schedule(deadline: DispatchTime.now() + intervalFromNow)
             timer.setEventHandler {
                 block(nil)
                 if let timer = sTimer.gcdTimer {
@@ -82,7 +82,7 @@ class ScheduledTimer {
                     queue: DispatchQueue.global(qos: DispatchQoS.QoSClass.default))
             
             let deadline = DispatchTime.now() + interval
-            timer.scheduleRepeating(deadline: deadline, interval: interval)
+            timer.schedule(deadline: deadline, repeating: interval)
             timer.setEventHandler {
                 block(nil)
             }

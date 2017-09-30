@@ -102,7 +102,7 @@ extension UIAlertController {
         }
         
         alertController.view.tintColor = UIView().tintColor
-        viewController.present(alertController, animated: true) { _ in }
+        viewController.present(alertController, animated: true) {}
     }
     
     /**
@@ -129,7 +129,7 @@ extension UIAlertController {
         super.viewWillTransition(to: size, with: coordinator)
     }
     
-    @objc static func presentFailureAlert(title: String?, message: String?, fromViewController: UIViewController?) {
+    static func presentFailureAlert(title: String?, message: String?, fromViewController: UIViewController?) {
         
         if !Thread.isMainThread {
             DispatchQueue.main.async(execute: {
@@ -148,7 +148,7 @@ extension UIAlertController {
             sourceView: nil)
     }
     
-    @objc static func presentServerUnavailableAlert() {
+    static func presentServerUnavailableAlert() {
         if !Thread.isMainThread {
             DispatchQueue.main.async(execute: {
                 UIAlertController.presentServerUnavailableAlert()
@@ -162,7 +162,7 @@ extension UIAlertController {
         }
     }
     
-    @objc static func presentInternetUnavailableAlert() {
+    static func presentInternetUnavailableAlert() {
         if !Thread.isMainThread {
             DispatchQueue.main.async(execute: {
                 UIAlertController.presentInternetUnavailableAlert()
@@ -176,7 +176,7 @@ extension UIAlertController {
         }
     }
     
-    @objc static func presentTryAgainAlert() {
+    static func presentTryAgainAlert() {
         if !Thread.isMainThread {
             DispatchQueue.main.async(execute: {
                 UIAlertController.presentTryAgainAlert()

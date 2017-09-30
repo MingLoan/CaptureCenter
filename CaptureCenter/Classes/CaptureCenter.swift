@@ -25,12 +25,10 @@ public final class CaptureCenter {
     }
     
     // get device for iOS9 or less
-    fileprivate func deviceWithPosition(_ position: AVCaptureDevicePosition) -> AVCaptureDevice? {
+    fileprivate func deviceWithPosition(_ position: AVCaptureDevice.Position) -> AVCaptureDevice? {
         for device in AVCaptureDevice.devices() {
-            if let device = device as? AVCaptureDevice {
-                if (device.hasMediaType(AVMediaTypeVideo) && device.position == position) {
-                    return device
-                }
+            if (device.hasMediaType(AVMediaType.video) && device.position == position) {
+                return device
             }
         }
         return nil
@@ -39,7 +37,7 @@ public final class CaptureCenter {
     // Public Properties
     public var hidesFocusControlUI = false
     public let previewView = PreviewView()
-    public var currentFlashMode = AVCaptureFlashMode.off {
+    public var currentFlashMode = AVCaptureDevice.FlashMode.off {
         didSet {
             if #available(iOS 10.0, *) {
                 // deprecated from iOS10
@@ -49,7 +47,7 @@ public final class CaptureCenter {
             }
         }
     }
-    public var currentTorchMode = AVCaptureTorchMode.off {
+    public var currentTorchMode = AVCaptureDevice.TorchMode.off {
         didSet {
             setTorchMode(currentTorchMode)
         }
@@ -89,7 +87,7 @@ public final class CaptureCenter {
     
     // MARK: - CaptureDeviceInput
     fileprivate var videoDeviceInput: AVCaptureDeviceInput?
-    internal var captureDevicePosition = AVCaptureDevicePosition.unspecified
+    internal var captureDevicePosition = AVCaptureDevice.Position.unspecified
     fileprivate var audioDeviceInput: AVCaptureDeviceInput?
     
     // MARK: - CaptureDeviceOutput
@@ -130,7 +128,7 @@ public final class CaptureCenter {
     
     // MARK: - Capture Methods
     @discardableResult
-    public func startCapturingWithDevicePosition(_ devicePosition: AVCaptureDevicePosition, fromVC vc: UIViewController, cameraControlShouldOn: Bool = false, completion: ((Bool) -> ())? = nil) -> AVCaptureSession? {
+    public func startCapturingWithDevicePosition(_ devicePosition: AVCaptureDevice.Position, fromVC vc: UIViewController, cameraControlShouldOn: Bool = false, completion: ((Bool) -> ())? = nil) -> AVCaptureSession? {
         
         cameraControls = cameraControlShouldOn
         
@@ -237,11 +235,11 @@ public final class CaptureCenter {
                  entering the session queue. We do this to ensure UI elements are accessed on
                  the main thread and session configuration is done on the session queue.
                  */
-                let videoPreviewLayerOrientation = strongSelf.previewView.videoPreviewLayer.connection.videoOrientation
+                let videoPreviewLayerOrientation = strongSelf.previewView.videoPreviewLayer.connection?.videoOrientation
                 
                 // Update the photo output's connection to match the video orientation of the video preview layer.
-                if let photoOutputConnection = strongSelf.photoOutput?.connection(withMediaType: AVMediaTypeVideo) {
-                    photoOutputConnection.videoOrientation = videoPreviewLayerOrientation
+                if let photoOutputConnection = strongSelf.photoOutput?.connection(with: AVMediaType.video) {
+                    photoOutputConnection.videoOrientation = videoPreviewLayerOrientation!
                 }
                 
                 let photoSettings = AVCapturePhotoSettings()
@@ -334,7 +332,7 @@ public final class CaptureCenter {
             }
             else {
                 
-                guard let videoConnection = strongSelf.imageOutput.connection(withMediaType: AVMediaTypeVideo) else { return }
+                guard let videoConnection = strongSelf.imageOutput.connection(with: AVMediaType.video) else { return }
                 
                 strongSelf.imageOutput.captureStillImageAsynchronously(from: videoConnection) { [weak strongSelf] (sampleBuffer, error) in
                     
@@ -350,7 +348,7 @@ public final class CaptureCenter {
 //                        NotificationCenter.default.post(name: Notification.Name(rawValue: Global.Notification.liveFaceDidCaptureNotification), object: nil)
 //                    }
                     
-                    let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(sampleBuffer)
+                    let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(sampleBuffer!)
                     let result = processCaptureData(imageData!, options: options, captureDevicePosition: innerStrongSelf.captureDevicePosition, previewViewSize: innerStrongSelf.previewView.bounds.size)
                     completion(result)
                 }
@@ -366,7 +364,7 @@ public final class CaptureCenter {
          before entering the session queue. We do this to ensure UI elements are
          accessed on the main thread and session configuration is done on the session queue.
          */
-        let videoPreviewLayerOrientation = previewView.videoPreviewLayer.connection.videoOrientation
+        let videoPreviewLayerOrientation = previewView.videoPreviewLayer.connection?.videoOrientation
         
         sessionQueue.async { [weak self] in
             guard let strongSelf = self else { return }
@@ -385,14 +383,14 @@ public final class CaptureCenter {
                 //}
                 
                 // Update the orientation on the movie file output video connection before starting recording.
-                let movieFileOutputConnection = strongSelf.movieFileOutput?.connection(withMediaType: AVMediaTypeVideo)
-                movieFileOutputConnection?.videoOrientation = videoPreviewLayerOrientation
+                let movieFileOutputConnection = strongSelf.movieFileOutput?.connection(with: AVMediaType.video)
+                movieFileOutputConnection?.videoOrientation = videoPreviewLayerOrientation!
                 
                 switch strongSelf.captureMode {
                 case let .video(size, fileLocationURL, didStart, progress, willFinish, completionHandler):
                     let recordingDelegate =
                         MovieRecordingCaptureDelegate(size: size, didStart: didStart, progress: progress, willFinish: willFinish, completionHandler: completionHandler)
-                    movieFileOutput.startRecording(toOutputFileURL: fileLocationURL, recordingDelegate: recordingDelegate)
+                    movieFileOutput.startRecording(to: fileLocationURL, recordingDelegate: recordingDelegate)
                     strongSelf.inProgressRecordingDelegate = recordingDelegate
                     break
                 default:
@@ -407,7 +405,7 @@ public final class CaptureCenter {
     
     // MARK: - Configure Capture Session
     // Call this on the session queue.
-    fileprivate func configureSessionWithCaptureDevicePosition(_ devicePosition: AVCaptureDevicePosition) {
+    fileprivate func configureSessionWithCaptureDevicePosition(_ devicePosition: AVCaptureDevice.Position) {
         if setupResult != .success {
             return
         }
@@ -420,10 +418,10 @@ public final class CaptureCenter {
              We do not create an AVCaptureMovieFileOutput when setting up the session because the
              AVCaptureMovieFileOutput does not support movie recording with AVCaptureSessionPresetPhoto.
              */
-            session.sessionPreset = AVCaptureSessionPresetPhoto
+            session.sessionPreset = AVCaptureSession.Preset.photo
             break
         default:
-            session.sessionPreset = AVCaptureSessionPresetHigh
+            session.sessionPreset = AVCaptureSession.Preset.high
             break
         }
         
@@ -431,14 +429,14 @@ public final class CaptureCenter {
         var videoDevice: AVCaptureDevice?
         if devicePosition == .back {
             if #available(iOS 10.0, *) {
-                if let dualCameraDevice = AVCaptureDevice.defaultDevice(withDeviceType: AVCaptureDeviceType.builtInDuoCamera, mediaType: AVMediaTypeVideo, position: .back) {
+                if let dualCameraDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInDuoCamera, for: AVMediaType.video, position: .back) {
                     videoDevice = dualCameraDevice
                 }
-                else if let backCameraDevice = AVCaptureDevice.defaultDevice(withDeviceType: AVCaptureDeviceType.builtInWideAngleCamera, mediaType: AVMediaTypeVideo, position: .back) {
+                else if let backCameraDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: .back) {
                     // If the back dual camera is not available, default to the back wide angle camera.
                     videoDevice = backCameraDevice
                 }
-                else if let frontCameraDevice = AVCaptureDevice.defaultDevice(withDeviceType: AVCaptureDeviceType.builtInWideAngleCamera, mediaType: AVMediaTypeVideo, position: .front) {
+                else if let frontCameraDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: .front) {
                     videoDevice = frontCameraDevice
                 }
             }
@@ -448,7 +446,7 @@ public final class CaptureCenter {
         }
         else if devicePosition == .front {
             if #available(iOS 10.0, *) {
-                videoDevice = AVCaptureDevice.defaultDevice(withDeviceType: AVCaptureDeviceType.builtInWideAngleCamera, mediaType: AVMediaTypeVideo, position: devicePosition)
+                videoDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: devicePosition)
             }
             else {
                 videoDevice = deviceWithPosition(devicePosition)
@@ -489,8 +487,8 @@ public final class CaptureCenter {
         
         // add audio input
         do {
-            let audioDevice = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeAudio)
-            let audioDeviceInput = try AVCaptureDeviceInput(device: audioDevice)
+            let audioDevice = AVCaptureDevice.default(for: AVMediaType.audio)
+            let audioDeviceInput = try AVCaptureDeviceInput(device: audioDevice!)
             self.audioDeviceInput = audioDeviceInput
             
             if session.canAddInput(audioDeviceInput) {
@@ -606,10 +604,10 @@ public final class CaptureCenter {
                  not supported with AVCaptureSessionPresetPhoto. Additionally, Live Photo
                  capture is not supported when an AVCaptureMovieFileOutput is connected to the session.
                  */
-                strongSelf.session.removeOutput(strongSelf.movieFileOutput)
+                strongSelf.session.removeOutput(strongSelf.movieFileOutput!)
                 // Remove movieFileOutput
                 strongSelf.movieFileOutput = nil
-                strongSelf.session.sessionPreset = AVCaptureSessionPresetPhoto
+                strongSelf.session.sessionPreset = AVCaptureSession.Preset.photo
                 if #available(iOS 10.0, *) {
                     if let output = strongSelf.photoOutput {
                         output.isLivePhotoCaptureEnabled = output.isLivePhotoCaptureSupported
@@ -634,7 +632,7 @@ public final class CaptureCenter {
     }
     
     private func configureSessionForVideoMode(_ session: AVCaptureSession, videoSize: VideoSize) -> Bool {
-        session.sessionPreset = AVCaptureSessionPresetHigh
+        session.sessionPreset = AVCaptureSession.Preset.high
 
         let movieFileOutput = AVCaptureMovieFileOutput()
         switch videoSize {
@@ -651,9 +649,9 @@ public final class CaptureCenter {
         
         if session.canAddOutput(movieFileOutput) {
             session.addOutput(movieFileOutput)
-            session.sessionPreset = AVCaptureSessionPresetMedium
+            session.sessionPreset = AVCaptureSession.Preset.medium
             
-            if let connection = movieFileOutput.connection(withMediaType: AVMediaTypeVideo) {
+            if let connection = movieFileOutput.connection(with: AVMediaType.video) {
                 if connection.isVideoStabilizationSupported {
                     connection.preferredVideoStabilizationMode = .auto
                 }
@@ -675,7 +673,7 @@ public final class CaptureCenter {
             let currentVideoDevice = strongSelf.videoDeviceInput?.device
             
             let currentPosition = currentVideoDevice?.position ?? .back
-            var preferredPosition: AVCaptureDevicePosition
+            var preferredPosition: AVCaptureDevice.Position
             
             switch currentPosition {
             case .unspecified, .front:
@@ -689,10 +687,10 @@ public final class CaptureCenter {
             
             if preferredPosition == .back {
                 if #available(iOS 10.0, *) {
-                    if let dualCameraDevice = AVCaptureDevice.defaultDevice(withDeviceType: AVCaptureDeviceType.builtInDuoCamera, mediaType: AVMediaTypeVideo, position: .back) {
+                    if let dualCameraDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInDuoCamera, for: AVMediaType.video, position: .back) {
                         videoDevice = dualCameraDevice
                     }
-                    else if let backCameraDevice = AVCaptureDevice.defaultDevice(withDeviceType: AVCaptureDeviceType.builtInWideAngleCamera, mediaType: AVMediaTypeVideo, position: .back) {
+                    else if let backCameraDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: .back) {
                         // If the back dual camera is not available, default to the back wide angle camera.
                         videoDevice = backCameraDevice
                     }
@@ -706,7 +704,7 @@ public final class CaptureCenter {
             }
             else if preferredPosition == .front {
                 if #available(iOS 10.0, *) {
-                    videoDevice = AVCaptureDevice.defaultDevice(withDeviceType: AVCaptureDeviceType.builtInWideAngleCamera, mediaType: AVMediaTypeVideo, position: preferredPosition)
+                    videoDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: preferredPosition)
                 }
                 else {
                     videoDevice = strongSelf.deviceWithPosition(preferredPosition)
@@ -738,7 +736,7 @@ public final class CaptureCenter {
                 strongSelf.session.beginConfiguration()
                 
                 // Remove the existing device input first, since using the front and back camera simultaneously is not supported.
-                strongSelf.session.removeInput(strongSelf.videoDeviceInput)
+                strongSelf.session.removeInput(strongSelf.videoDeviceInput!)
                 
                 if strongSelf.session.canAddInput(videoDeviceInput) {
                     NotificationCenter.default.removeObserver(
@@ -757,10 +755,10 @@ public final class CaptureCenter {
                     strongSelf.captureDevicePosition = preferredPosition
                 }
                 else {
-                    strongSelf.session.addInput(strongSelf.videoDeviceInput);
+                    strongSelf.session.addInput(strongSelf.videoDeviceInput!);
                 }
                 
-                if let connection = strongSelf.movieFileOutput?.connection(withMediaType: AVMediaTypeVideo) {
+                if let connection = strongSelf.movieFileOutput?.connection(with: AVMediaType.video) {
                     if connection.isVideoStabilizationSupported {
                         connection.preferredVideoStabilizationMode = .auto
                     }
@@ -812,7 +810,7 @@ public final class CaptureCenter {
     }
     
     // MARK: - Focus
-    public func focusWithMode(_ focusMode: AVCaptureFocusMode, exposureMode: AVCaptureExposureMode, at devicePoint: CGPoint, monitorSubjectAreaChange: Bool, showUI: @escaping ((Bool) -> ())) {
+    public func focusWithMode(_ focusMode: AVCaptureDevice.FocusMode, exposureMode: AVCaptureDevice.ExposureMode, at devicePoint: CGPoint, monitorSubjectAreaChange: Bool, showUI: @escaping ((Bool) -> ())) {
         
         sessionQueue.async { [weak self] in
             guard let strongSelf = self else { return }
@@ -870,7 +868,7 @@ public final class CaptureCenter {
     }
     
     // MARK: - Flash
-    fileprivate func setFlashMode(_ mode: AVCaptureFlashMode) {
+    fileprivate func setFlashMode(_ mode: AVCaptureDevice.FlashMode) {
         sessionQueue.async { [weak self] in
             guard let strongSelf = self else { return }
             
@@ -892,7 +890,7 @@ public final class CaptureCenter {
     }
     
     // MARK: - Torch
-    fileprivate func setTorchMode(_ mode: AVCaptureTorchMode) {
+    fileprivate func setTorchMode(_ mode: AVCaptureDevice.TorchMode) {
         sessionQueue.async { [weak self] in
             guard let strongSelf = self else { return }
             
@@ -969,7 +967,7 @@ public final class CaptureCenter {
         sessionQueue.async { [weak self] in
             guard let strongSelf = self else { return }
             let previewCenterPoint = CGPoint(x: strongSelf.previewView.bounds.width/2, y: strongSelf.previewView.bounds.height/2)
-            let devicePoint = strongSelf.previewView.videoPreviewLayer.captureDevicePointOfInterest(for: previewCenterPoint)
+            let devicePoint = strongSelf.previewView.videoPreviewLayer.captureDevicePointConverted(fromLayerPoint: previewCenterPoint)
             
             strongSelf.exposeWithBias(0)
             strongSelf.focusWithMode(.continuousAutoFocus, exposureMode: .continuousAutoExposure, at: devicePoint, monitorSubjectAreaChange: true) { [weak strongSelf] showUI in
@@ -1028,11 +1026,11 @@ public final class CaptureCenter {
          */
         if let userInfoValue = notification.userInfo?[AVCaptureSessionInterruptionReasonKey] as AnyObject?,
             let reasonIntegerValue = userInfoValue.integerValue,
-            let reason = AVCaptureSessionInterruptionReason(rawValue: reasonIntegerValue) {
+            let reason = AVCaptureSession.InterruptionReason(rawValue: reasonIntegerValue) {
             
             print("Capture session was interrupted with reason \(reason)")
             
-            if reason == AVCaptureSessionInterruptionReason.audioDeviceInUseByAnotherClient || reason == AVCaptureSessionInterruptionReason.videoDeviceInUseByAnotherClient {
+            if reason == AVCaptureSession.InterruptionReason.audioDeviceInUseByAnotherClient || reason == AVCaptureSession.InterruptionReason.videoDeviceInUseByAnotherClient {
                 // retry 5 seconds later
                 ScheduledTimer.schedule(5, block: { [weak self] _ in
                     self?.resumeInterruptedSession()

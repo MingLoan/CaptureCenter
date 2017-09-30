@@ -24,9 +24,9 @@ extension UIApplication {
         fromViewController: UIViewController? = nil,
         completion:@escaping ((Bool, Bool) -> ())) {
         
-        switch AVCaptureDevice.authorizationStatus(forMediaType: AVMediaTypeVideo) {
+        switch AVCaptureDevice.authorizationStatus(for: AVMediaType.video) {
         case .notDetermined:
-            AVCaptureDevice.requestAccess(forMediaType: AVMediaTypeVideo) { granted in
+            AVCaptureDevice.requestAccess(for: AVMediaType.video) { granted in
                 
                 completion(granted, true)
                 

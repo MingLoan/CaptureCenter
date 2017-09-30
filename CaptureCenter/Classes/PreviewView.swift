@@ -58,7 +58,7 @@ public class PreviewView: UIView {
         }
         set {
             videoPreviewLayer.session = newValue
-            videoPreviewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
+            videoPreviewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
         }
     }
     
@@ -100,7 +100,7 @@ public class PreviewView: UIView {
         UIDevice.current.endGeneratingDeviceOrientationNotifications()
     }
     
-    func orientationChanged(notification: Notification) {
+    @objc func orientationChanged(notification: Notification) {
         // handle rotation here
         guard let connection = videoPreviewLayer.connection else { return }
         
@@ -118,12 +118,12 @@ public class PreviewView: UIView {
     }
     
     // MARK: - Gestures Handling
-    func tap(_ gesture: UITapGestureRecognizer) {
+    @objc func tap(_ gesture: UITapGestureRecognizer) {
         guard let previewLayer = layer as? AVCaptureVideoPreviewLayer else { return }
         guard let captureCenter = captureCenter else { return }
         
         let point = gesture.location(in: gesture.view)
-        let devicePoint = previewLayer.captureDevicePointOfInterest(for: point)
+        let devicePoint = previewLayer.captureDevicePointConverted(fromLayerPoint: point)
         
         captureCenter.focusWithMode(.continuousAutoFocus, exposureMode: .continuousAutoExposure, at: devicePoint, monitorSubjectAreaChange: true) { [weak self] showUI in
             if showUI {
@@ -132,7 +132,7 @@ public class PreviewView: UIView {
         }
     }
     
-    func pan(_ gesture: UIPanGestureRecognizer) {
+    @objc func pan(_ gesture: UIPanGestureRecognizer) {
 
         guard let captureCenter = captureCenter else { return }
         if isFocusing {
@@ -161,7 +161,7 @@ public class PreviewView: UIView {
     
     fileprivate var startScale: CGFloat = 0
     fileprivate var startZoom: CGFloat = 0
-    func pinch(_ gesture: UIPinchGestureRecognizer) {
+    @objc func pinch(_ gesture: UIPinchGestureRecognizer) {
         
         guard let captureCenter = captureCenter else { return }
         switch gesture.state {

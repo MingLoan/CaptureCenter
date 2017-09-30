@@ -351,12 +351,12 @@ class CameraViewController: UIViewController {
         previewContainerView.detachPreviewView()
     }
     
-    func close(_ sender: UIButton) {
+    @objc func close(_ sender: UIButton) {
         stopCapturing()
         dismiss(animated: true, completion: nil)
     }
     
-    func capture(_ sender: UIButton) {
+    @objc func capture(_ sender: UIButton) {
         
         guard let captureCenter = captureCenter else { return }
 
@@ -416,7 +416,7 @@ class CameraViewController: UIViewController {
     }*/
     
     // MARK: - Toggle front or back camera
-    func cameraDeviceToggle(_ sender: UIButton) {
+    @objc func cameraDeviceToggle(_ sender: UIButton) {
         
         guard let captureCenter = captureCenter else { return }
         
@@ -521,7 +521,7 @@ class CameraViewController: UIViewController {
         
     }
     
-    func flashButtonTapped(_ sender: UIButton) {
+    @objc func flashButtonTapped(_ sender: UIButton) {
         
         guard let captureCenter = captureCenter else { return }
         

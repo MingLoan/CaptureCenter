@@ -29,14 +29,14 @@ class MovieRecordingCaptureDelegate: NSObject, AVCaptureFileOutputRecordingDeleg
         self.completionHandler = completionHandler
     }
     
-    func capture(_ captureOutput: AVCaptureFileOutput!, didStartRecordingToOutputFileAt fileURL: URL!, fromConnections connections: [Any]!) {
+    private func fileOutput(captureOutput: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
         DispatchQueue.main.async {
             self.didStart?()
         }
     }
     
-    func fileOutput(_ output: AVCaptureFileOutput,
-                    willFinishRecordingTo fileURL: URL,
+    @objc(captureOutput:didFinishRecordingToOutputFileAtURL:fromConnections:error:) func fileOutput(_ output: AVCaptureFileOutput,
+                                                                                                    didFinishRecordingTo fileURL: URL,
                     from connections: [AVCaptureConnection],
                     error: Error?){
         DispatchQueue.main.async {
@@ -44,7 +44,7 @@ class MovieRecordingCaptureDelegate: NSObject, AVCaptureFileOutputRecordingDeleg
         }
     }
     
-    func capture(_ captureOutput: AVCaptureFileOutput!, didFinishRecordingToOutputFileAt outputFileURL: URL!, fromConnections connections: [Any]!, error: Error!) {
+    func fileOutput(captureOutput: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         
         if let err = error {
             print("\(err)")
@@ -59,15 +59,15 @@ class MovieRecordingCaptureDelegate: NSObject, AVCaptureFileOutputRecordingDeleg
         completionHandler(asset)
     }
     
-    func fileOutput(_ output: AVCaptureFileOutput,
-                    didPauseRecordingTo fileURL: URL,
-                    from connections: [AVCaptureConnection]){
-        
-    }
-    
-    func fileOutput(_ output: AVCaptureFileOutput,
-                    didResumeRecordingTo fileURL: URL,
-                    from connections: [AVCaptureConnection]){
-        
-    }
+//    func fileOutput(_ output: AVCaptureFileOutput,
+//                    didPauseRecordingTo fileURL: URL,
+//                    from connections: [AVCaptureConnection]){
+//
+//    }
+//
+//    func fileOutput(_ output: AVCaptureFileOutput,
+//                    didResumeRecordingTo fileURL: URL,
+//                    from connections: [AVCaptureConnection]){
+//
+//    }
 }
